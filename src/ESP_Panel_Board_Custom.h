@@ -248,7 +248,8 @@
                                                     // Typically set to 400K
     #define ESP_PANEL_TOUCH_I2C_SCL_PULLUP  (1)     // 0/1
     #define ESP_PANEL_TOUCH_I2C_SDA_PULLUP  (1)     // 0/1
-    #define ESP_PANEL_TOUCH_I2C_IO_SCL      (18)
+    //#define ESP_PANEL_TOUCH_I2C_IO_SCL      (18)
+    #define ESP_PANEL_TOUCH_I2C_IO_SCL      (9)
     #define ESP_PANEL_TOUCH_I2C_IO_SDA      (8)
 #endif
 
@@ -290,7 +291,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// Please update the following macros to configure the backlight ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define ESP_PANEL_USE_BACKLIGHT         (1)         // 0/1
+#define ESP_PANEL_USE_BACKLIGHT         (0)         // 0/1
 #if ESP_PANEL_USE_BACKLIGHT
 /* Backlight pin */
 #define ESP_PANEL_BACKLIGHT_IO          (45)        // IO num of backlight pin
@@ -307,7 +308,7 @@
 ///////////////////////////// Please update the following macros to configure the IO expander //////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Set to 0 if not using IO Expander */
-#define ESP_PANEL_USE_EXPANDER          (1)         // 0/1
+#define ESP_PANEL_USE_EXPANDER          (0)         // 0/1
 #if ESP_PANEL_USE_EXPANDER
 /**
  * IO expander name. Choose one of the following:
