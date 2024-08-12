@@ -49,7 +49,6 @@ void LvglComponentsInitializer::InitComponents()
     profile_create(t1);
 }
 
-
 static void profile_create(lv_obj_t * parent)
 {
     lv_obj_t * panel1 = lv_obj_create(parent);
