@@ -97,7 +97,7 @@
 
 #elif ESP_PANEL_LCD_BUS_TYPE == ESP_PANEL_BUS_TYPE_RGB
 
-    #define ESP_PANEL_LCD_RGB_CLK_HZ            (14 * 1000 * 1000)
+    #define ESP_PANEL_LCD_RGB_CLK_HZ            (16 * 1000 * 1000)
     #define ESP_PANEL_LCD_RGB_HPW               (4)
     #define ESP_PANEL_LCD_RGB_HBP               (8)
     #define ESP_PANEL_LCD_RGB_HFP               (8)
@@ -290,7 +290,7 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////// Please update the following macros to configure the backlight ////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define ESP_PANEL_USE_BACKLIGHT         (0)         // 0/1
+#define ESP_PANEL_USE_BACKLIGHT         (1)         // 0/1
 #if ESP_PANEL_USE_BACKLIGHT
 /* Backlight pin */
 #define ESP_PANEL_BACKLIGHT_IO          (45)        // IO num of backlight pin
@@ -307,7 +307,7 @@
 ///////////////////////////// Please update the following macros to configure the IO expander //////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Set to 0 if not using IO Expander */
-#define ESP_PANEL_USE_EXPANDER          (0)         // 0/1
+#define ESP_PANEL_USE_EXPANDER          (1)         // 0/1
 #if ESP_PANEL_USE_EXPANDER
 /**
  * IO expander name. Choose one of the following:
@@ -316,14 +316,14 @@
  *      - TCA95xx_8bit
  *      - TCA95xx_16bit
  */
-#define ESP_PANEL_EXPANDER_NAME         TCA95xx_8bit
+#define ESP_PANEL_EXPANDER_NAME         CH422G
 
 /* IO expander Settings */
 /**
  * If set to 1, the driver will skip to initialize the corresponding host. Users need to initialize the host in advance.
  * It is useful if other devices use the same host. Please ensure that the host is initialized only once.
  */
-#define ESP_PANEL_EXPANDER_SKIP_INIT_HOST       (0)     // 0/1
+#define ESP_PANEL_EXPANDER_SKIP_INIT_HOST       (1)     // 0/1
 /* IO expander parameters */
 #define ESP_PANEL_EXPANDER_HOST_ID              (0)     // Typically set to 0
 #define ESP_PANEL_EXPANDER_I2C_ADDRESS          (0x20)  // The actual I2C address. Even for the same model of IC,
