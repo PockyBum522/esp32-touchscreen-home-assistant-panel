@@ -1,8 +1,59 @@
+/**
+ * # LVGL Porting Example
+ *
+ * The example demonstrates how to port LVGL(v8). And for RGB LCD, it can enable the avoid tearing function.
+ *
+ * ## How to Use
+ *
+ * To use this example, please firstly install the following dependent libraries:
+ *
+ * - lvgl (>= v8.3.9, < v9)
+ *
+ * Then follow the steps below to configure:
+ *
+ * Follow the steps below to configure:
+ *
+ * 1. For **ESP32_Display_Panel**:
+ *
+ *     - Follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-drivers) to configure drivers if needed.
+ *     - If using a supported development board, follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#using-supported-development-boards) to configure it.
+ *     - If using a custom board, follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#using-custom-development-boards) to configure it.
+ *
+ * 2. For **lvgl**:
+ *
+ *     - Follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-lvgl) to add *lv_conf.h* file and change the configurations.
+ *     - Modify the macros in the [lvgl_port_v8.h](./lvgl_port_v8.h) file to configure the LVGL porting parameters.
+ *
+ * 3. Navigate to the `Tools` menu in the Arduino IDE to choose a ESP board and configure its parameters. For supported
+ *    boards, please refter to [Configuring Supported Development Boards](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-supported-development-boards)
+ * 4. Verify and upload the example to your ESP board.
+ *
+ * ## Serial Output
+ *
+ * ```bash
+ * ...
+ * LVGL porting example start
+ * Initialize panel device
+ * Initialize LVGL
+ * Create UI
+ * LVGL porting example end
+ * IDLE loop
+ * IDLE loop
+ * ...
+ * ```
+ *
+ * ## Troubleshooting
+ *
+ * Please check the [FAQ](https://github.com/esp-arduino-libs/ESP32_Display_Panel#faq) first to see if the same question exists. If not, please create a [Github issue](https://github.com/esp-arduino-libs/ESP32_Display_Panel/issues). We will get back to you as soon as possible.
+ *
+ */
+
 #include <Arduino.h>
 #include <ESP_Panel_Library.h>
 #include <lvgl.h>
+#include <src/demos/widgets/lv_demo_widgets.h>
+
 #include "lvgl_port_v8.h"
-#include <demos/lv_demos.h>
 
 /**
 /* To use the built-in examples and demos of LVGL uncomment the includes below respectively.
@@ -11,12 +62,6 @@
 // #include <demos/lv_demos.h>
 // #include <examples/lv_examples.h>
 
-constexpr uint8_t IO_EXPANDER_TOUCH_PANEL_RESET = 1 << 1;
-constexpr uint8_t IO_EXPANDER_LCD_BACKLIGHT = 1 << 2;
-constexpr uint8_t IO_EXPANDER_LCD_RESET = 1 << 3;
-constexpr uint8_t IO_EXPANDER_SD_CS = 1 << 4;
-constexpr uint8_t IO_EXPANDER_USB_SELECT = 1 << 5;
-
 void setup()
 {
     String title = "LVGL porting example";
@@ -24,26 +69,9 @@ void setup()
     Serial.begin(115200);
     Serial.println(title + " start");
 
-
-
-
-
     Serial.println("Initialize panel device");
     ESP_Panel *panel = new ESP_Panel();
     panel->init();
-
-    ESP_IOExpander *expander = new ESP_IOExpander_CH422G(I2C_NUM_0, ESP_IO_EXPANDER_I2C_CH422G_ADDRESS_000, GPIO_NUM_9, GPIO_NUM_8);
-    expander->init();
-    expander->begin();
-    expander->multiPinMode(IO_EXPANDER_TOUCH_PANEL_RESET | IO_EXPANDER_LCD_BACKLIGHT | IO_EXPANDER_LCD_RESET | IO_EXPANDER_SD_CS | IO_EXPANDER_USB_SELECT, OUTPUT);
-    expander->multiDigitalWrite(IO_EXPANDER_TOUCH_PANEL_RESET | IO_EXPANDER_LCD_BACKLIGHT | IO_EXPANDER_LCD_RESET, HIGH);
-    delay(100);
-    expander->multiDigitalWrite(IO_EXPANDER_TOUCH_PANEL_RESET | IO_EXPANDER_LCD_RESET, LOW);
-    delay(100);
-    digitalWrite(GPIO_NUM_4, LOW);
-    delay(100);
-    expander->multiDigitalWrite(IO_EXPANDER_TOUCH_PANEL_RESET | IO_EXPANDER_LCD_RESET, HIGH);
-    delay(200);
 #if LVGL_PORT_AVOID_TEAR
     // When avoid tearing function is enabled, configure the RGB bus according to the LVGL configuration
     ESP_PanelBus_RGB *rgb_bus = static_cast<ESP_PanelBus_RGB *>(panel->getLcd()->getBus());
@@ -73,7 +101,7 @@ void setup()
 
     /**
      * Or try out a demo.
-     * Don't forget to uncomment header and enable the demos in `lv_conf.h`. E.g. `LV_USE_DEMOS_WIDGETS`
+     * Don't forget to uncomment header and enable the demos in `lv_conf.h`. E.g. `LV_USE_DEMO_WIDGETS`
      */
     // lv_demo_widgets();
     lv_demo_benchmark();

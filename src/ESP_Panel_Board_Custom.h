@@ -97,13 +97,13 @@
 
 #elif ESP_PANEL_LCD_BUS_TYPE == ESP_PANEL_BUS_TYPE_RGB
 
-    #define ESP_PANEL_LCD_RGB_CLK_HZ            (16 * 1000 * 1000)
-    #define ESP_PANEL_LCD_RGB_HPW               (10)
-    #define ESP_PANEL_LCD_RGB_HBP               (10)
-    #define ESP_PANEL_LCD_RGB_HFP               (20)
-    #define ESP_PANEL_LCD_RGB_VPW               (10)
-    #define ESP_PANEL_LCD_RGB_VBP               (10)
-    #define ESP_PANEL_LCD_RGB_VFP               (10)
+    #define ESP_PANEL_LCD_RGB_CLK_HZ            (14 * 1000 * 1000)
+    #define ESP_PANEL_LCD_RGB_HPW               (4)
+    #define ESP_PANEL_LCD_RGB_HBP               (8)
+    #define ESP_PANEL_LCD_RGB_HFP               (8)
+    #define ESP_PANEL_LCD_RGB_VPW               (4)
+    #define ESP_PANEL_LCD_RGB_VBP               (8)
+    #define ESP_PANEL_LCD_RGB_VFP               (8)
     #define ESP_PANEL_LCD_RGB_PCLK_ACTIVE_NEG   (0)     // 0: rising edge, 1: falling edge
 
                                                         // | 8-bit RGB888 | 16-bit RGB565 |
@@ -118,20 +118,20 @@
                                                         // where N is an even number.
     #define ESP_PANEL_LCD_RGB_IO_HSYNC          (46)
     #define ESP_PANEL_LCD_RGB_IO_VSYNC          (3)
-    #define ESP_PANEL_LCD_RGB_IO_DE             (17)    // -1 if not used
-    #define ESP_PANEL_LCD_RGB_IO_PCLK           (9)
+    #define ESP_PANEL_LCD_RGB_IO_DE             (5)    // -1 if not used
+    #define ESP_PANEL_LCD_RGB_IO_PCLK           (7)
     #define ESP_PANEL_LCD_RGB_IO_DISP           (-1)    // -1 if not used
 
                                                         // | RGB565 | RGB666 | RGB888 |
                                                         // |--------|--------|--------|
-    #define ESP_PANEL_LCD_RGB_IO_DATA0          (10)    // |   B0   |  B0-1  |   B0-3 |
-    #define ESP_PANEL_LCD_RGB_IO_DATA1          (11)    // |   B1   |  B2    |   B4   |
-    #define ESP_PANEL_LCD_RGB_IO_DATA2          (12)    // |   B2   |  B3    |   B5   |
-    #define ESP_PANEL_LCD_RGB_IO_DATA3          (13)    // |   B3   |  B4    |   B6   |
-    #define ESP_PANEL_LCD_RGB_IO_DATA4          (14)    // |   B4   |  B5    |   B7   |
-    #define ESP_PANEL_LCD_RGB_IO_DATA5          (21)    // |   G0   |  G0    |   G0-2 |
-    #define ESP_PANEL_LCD_RGB_IO_DATA6          (47)    // |   G1   |  G1    |   G3   |
-    #define ESP_PANEL_LCD_RGB_IO_DATA7          (48)    // |   G2   |  G2    |   G4   |
+    #define ESP_PANEL_LCD_RGB_IO_DATA0          (14)    // |   B0   |  B0-1  |   B0-3 |
+    #define ESP_PANEL_LCD_RGB_IO_DATA1          (38)    // |   B1   |  B2    |   B4   |
+    #define ESP_PANEL_LCD_RGB_IO_DATA2          (18)    // |   B2   |  B3    |   B5   |
+    #define ESP_PANEL_LCD_RGB_IO_DATA3          (17)    // |   B3   |  B4    |   B6   |
+    #define ESP_PANEL_LCD_RGB_IO_DATA4          (10)    // |   B4   |  B5    |   B7   |
+    #define ESP_PANEL_LCD_RGB_IO_DATA5          (39)    // |   G0   |  G0    |   G0-2 |
+    #define ESP_PANEL_LCD_RGB_IO_DATA6          (0)    // |   G1   |  G1    |   G3   |
+    #define ESP_PANEL_LCD_RGB_IO_DATA7          (45)    // |   G2   |  G2    |   G4   |
 #if ESP_PANEL_LCD_RGB_DATA_WIDTH > 8
     #define ESP_PANEL_LCD_RGB_IO_DATA8          (45)    // |   G3   |  G3    |   G5   |
     #define ESP_PANEL_LCD_RGB_IO_DATA9          (38)    // |   G4   |  G4    |   G6   |
@@ -176,18 +176,8 @@
  *   2. Formater: ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(delay_ms, command, { data0, data1, ... }) and
  *                ESP_PANEL_LCD_CMD_WITH_NONE_PARAM(delay_ms, command)
  */
-// #define ESP_PANEL_LCD_VENDOR_INIT_CMD()                                        \
-//     {                                                                          \
-//         {0xFF, (uint8_t []){0x77, 0x01, 0x00, 0x00, 0x10}, 5, 0},              \
-//         {0xC0, (uint8_t []){0x3B, 0x00}, 2, 0},                                \
-//         {0xC1, (uint8_t []){0x0D, 0x02}, 2, 0},                                \
-//         {0x29, (uint8_t []){0x00}, 0, 120},                                    \
-//         or                                                                     \
-//         ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xFF, {0x77, 0x01, 0x00, 0x00, 0x10}), \
-//         ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xC0, {0x3B, 0x00}),                   \
-//         ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xC1, {0x0D, 0x02}),                   \
-//         ESP_PANEL_LCD_CMD_WITH_NONE_PARAM(120, 0x29),                               \
-//     }
+
+
 
 /* LCD Color Settings */
 /* LCD color depth in bits */
@@ -317,7 +307,7 @@
 ///////////////////////////// Please update the following macros to configure the IO expander //////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Set to 0 if not using IO Expander */
-#define ESP_PANEL_USE_EXPANDER          (1)         // 0/1
+#define ESP_PANEL_USE_EXPANDER          (0)         // 0/1
 #if ESP_PANEL_USE_EXPANDER
 /**
  * IO expander name. Choose one of the following:
@@ -326,7 +316,7 @@
  *      - TCA95xx_8bit
  *      - TCA95xx_16bit
  */
-#define ESP_PANEL_EXPANDER_NAME         CH422G
+#define ESP_PANEL_EXPANDER_NAME         TCA95xx_8bit
 
 /* IO expander Settings */
 /**
