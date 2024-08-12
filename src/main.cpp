@@ -71,6 +71,16 @@ void setup()
 
     Serial.println("Initialize panel device");
     ESP_Panel *panel = new ESP_Panel();
+
+    uint8_t write_buf = 0x01;
+    i2c_master_write_to_device(I2C_NUM_0, 0x24, &write_buf, 1, 500 / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG,"0x48 0x01 ret is %d",ret);
+    write_buf = 0x0E;
+    i2c_master_write_to_device(I2C_NUM_0, 0x38, &write_buf, 1, 500 / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG,"0x70 0x00 ret is %d",ret);
+
+
+
     panel->init();
 #if LVGL_PORT_AVOID_TEAR
     // When avoid tearing function is enabled, configure the RGB bus according to the LVGL configuration
