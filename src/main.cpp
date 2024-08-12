@@ -1,53 +1,3 @@
-/**
- * # LVGL Porting Example
- *
- * The example demonstrates how to port LVGL(v8). And for RGB LCD, it can enable the avoid tearing function.
- *
- * ## How to Use
- *
- * To use this example, please firstly install the following dependent libraries:
- *
- * - lvgl (>= v8.3.9, < v9)
- *
- * Then follow the steps below to configure:
- *
- * Follow the steps below to configure:
- *
- * 1. For **ESP32_Display_Panel**:
- *
- *     - Follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-drivers) to configure drivers if needed.
- *     - If using a supported development board, follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#using-supported-development-boards) to configure it.
- *     - If using a custom board, follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#using-custom-development-boards) to configure it.
- *
- * 2. For **lvgl**:
- *
- *     - Follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-lvgl) to add *lv_conf.h* file and change the configurations.
- *     - Modify the macros in the [lvgl_port_v8.h](./lvgl_port_v8.h) file to configure the LVGL porting parameters.
- *
- * 3. Navigate to the `Tools` menu in the Arduino IDE to choose a ESP board and configure its parameters. For supported
- *    boards, please refter to [Configuring Supported Development Boards](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-supported-development-boards)
- * 4. Verify and upload the example to your ESP board.
- *
- * ## Serial Output
- *
- * ```bash
- * ...
- * LVGL porting example start
- * Initialize panel device
- * Initialize LVGL
- * Create UI
- * LVGL porting example end
- * IDLE loop
- * IDLE loop
- * ...
- * ```
- *
- * ## Troubleshooting
- *
- * Please check the [FAQ](https://github.com/esp-arduino-libs/ESP32_Display_Panel#faq) first to see if the same question exists. If not, please create a [Github issue](https://github.com/esp-arduino-libs/ESP32_Display_Panel/issues). We will get back to you as soon as possible.
- *
- */
-
 #include <Arduino.h>
 #include <ESP_Panel_Library.h>
 #include <lvgl.h>
@@ -55,12 +5,20 @@
 
 #include "lvgl_port_v8.h"
 
-/**
-/* To use the built-in examples and demos of LVGL uncomment the includes below respectively.
- * You also need to copy `lvgl/examples` to `lvgl/src/examples`. Similarly for the demos `lvgl/demos` to `lvgl/src/demos`.
- */
-// #include <demos/lv_demos.h>
-// #include <examples/lv_examples.h>
+// You must plug/unplug the USB-C cable physically if you are seeing i2c transaction failed/i2c read errors
+//
+// Once you get a boot where you do not see those errors and the only console output is the IDLE loop
+//
+// Then you can upload new code/or reset the board as much as you want and you shouldn't see i2c errors until you
+// physically unplug the board again.
+
+
+
+constexpr uint8_t IO_EXPANDER_TOUCH_PANEL_RESET = 1;
+constexpr uint8_t IO_EXPANDER_LCD_BACKLIGHT = 2;
+constexpr uint8_t IO_EXPANDER_LCD_RESET = 3;
+constexpr uint8_t IO_EXPANDER_SD_CS = 4;
+constexpr uint8_t IO_EXPANDER_USB_SELECT = 5;
 
 void setup()
 {
@@ -72,26 +30,34 @@ void setup()
     Serial.println("Initialize panel device");
     ESP_Panel *panel = new ESP_Panel();
 
-    uint8_t write_buf = 0x01;
-    i2c_master_write_to_device(I2C_NUM_0, 0x24, &write_buf, 1, 500 / portTICK_PERIOD_MS);
-    ESP_LOGI(TAG,"0x48 0x01 ret is %d",ret);
-    write_buf = 0x0E;
-    i2c_master_write_to_device(I2C_NUM_0, 0x38, &write_buf, 1, 500 / portTICK_PERIOD_MS);
-    ESP_LOGI(TAG,"0x70 0x00 ret is %d",ret);
+
+    delay(150);
+
+    // uint8_t write_buf = 0x01;
+    // i2c_master_write_to_device(I2C_NUM_0, 0x24, &write_buf, 1, 500 / portTICK_PERIOD_MS);
+    // ESP_LOGI(TAG,"0x48 0x01 ret is %d",ret);
+    // write_buf = 0x0E;
+    // i2c_master_write_to_device(I2C_NUM_0, 0x38, &write_buf, 1, 500 / portTICK_PERIOD_MS);
+    // ESP_LOGI(TAG,"0x70 0x00 ret is %d",ret);
 
 
 
     panel->init();
+    delay(150);
 #if LVGL_PORT_AVOID_TEAR
     // When avoid tearing function is enabled, configure the RGB bus according to the LVGL configuration
     ESP_PanelBus_RGB *rgb_bus = static_cast<ESP_PanelBus_RGB *>(panel->getLcd()->getBus());
+    delay(150);
     rgb_bus->configRgbFrameBufferNumber(LVGL_PORT_DISP_BUFFER_NUM);
+    delay(150);
     rgb_bus->configRgbBounceBufferSize(LVGL_PORT_RGB_BOUNCE_BUFFER_SIZE);
+    delay(150);
 #endif
     panel->begin();
-
+    delay(150);
     Serial.println("Initialize LVGL");
     lvgl_port_init(panel->getLcd(), panel->getTouch());
+    delay(150);
 
     Serial.println("Create UI");
     /* Lock the mutex due to the LVGL APIs are not thread-safe */
