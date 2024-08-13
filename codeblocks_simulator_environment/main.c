@@ -59,12 +59,12 @@ void make_garage_door_button_with_style(void)
 
     /* A default transition, make it fast (100ms) and start with some delay (200 ms)*/
     static lv_style_transition_dsc_t trans_def;
-    lv_style_transition_dsc_init(&trans_def, props, lv_anim_path_linear, 100, 200, NULL);
+    lv_style_transition_dsc_init(&trans_def, props, lv_anim_path_linear, 400, 3000, NULL);
 
     /* A special transition when going to pressed state
      * Make it slow (500 ms) but start  without delay*/
     static lv_style_transition_dsc_t trans_pr;
-    lv_style_transition_dsc_init(&trans_pr, props, lv_anim_path_linear, 2000, 0, NULL);
+    lv_style_transition_dsc_init(&trans_pr, props, lv_anim_path_linear, 4000, 0, NULL);
 
     static lv_style_t style_def;
     lv_style_init(&style_def);
