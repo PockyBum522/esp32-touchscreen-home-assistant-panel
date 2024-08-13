@@ -58,7 +58,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLi
     lv_init();
 
     /*Initialize the HAL for LVGL*/
-    lv_display_t * display = lv_windows_create_display(title, 800, 480, 100, FALSE, FALSE);
+    lv_display_t * display = lv_windows_create_display("LVGL Simulator", 800, 480, 100, FALSE, FALSE);
     lv_windows_acquire_pointer_indev(display);
 
     /*Output prompt information to the console, you can also use printf() to print directly*/
