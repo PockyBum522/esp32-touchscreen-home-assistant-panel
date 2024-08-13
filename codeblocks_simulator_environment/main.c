@@ -37,7 +37,7 @@
  *   GLOBAL FUNCTIONS
  **********************/
 
- void set_background_dark(void)
+ void make_background_dark(void)
 {
     /*Change the active screen's background color*/
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x111111), LV_PART_MAIN);
@@ -52,6 +52,50 @@
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
+static void event_garage_door_button(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * label = lv_event_get_user_data(e);
+
+    switch(code)
+    {
+        case LV_EVENT_PRESSED:
+            printf("The last button event:\nLV_EVENT_PRESSED");
+            break;
+
+        case LV_EVENT_CLICKED:
+            printf("The last button event:\nLV_EVENT_CLICKED");
+            break;
+
+        case LV_EVENT_LONG_PRESSED:
+            printf("The last button event:\nLV_EVENT_LONG_PRESSED");
+            break;
+
+        case LV_EVENT_LONG_PRESSED_REPEAT:
+            printf("The last button event:\nLV_EVENT_LONG_PRESSED_REPEAT");
+            break;
+
+        default:
+            break;
+    }
+}
+
+make_garage_door_open_button()
+{
+    lv_obj_t * btn = lv_button_create(lv_screen_active());
+    lv_obj_set_size(btn, 100, 100);
+    lv_obj_center(btn);
+
+    lv_obj_t * btn_label = lv_label_create(btn);
+    lv_label_set_text(btn_label, "Garage Door");
+    lv_obj_center(btn_label);
+
+    // lv_obj_t * info_label = lv_label_create(lv_screen_active());
+    // lv_label_set_text(info_label, "The last button event:\nNone");
+
+    lv_obj_add_event_cb(btn, event_garage_door_button, LV_EVENT_ALL, NULL);
+}
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLine, int nCmdShow)
 {
     /*Initialize LVGL*/
@@ -64,8 +108,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR szCmdLi
     /*Output prompt information to the console, you can also use printf() to print directly*/
     LV_LOG_USER("LVGL initialization completed!");
 
-    set_background_dark();
+    make_background_dark();
     make_hello_label();
+    make_garage_door_open_button();
 
     while(1) {
         /* Periodically call the lv_task handler.
