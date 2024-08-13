@@ -10,17 +10,17 @@
 
 
 #include "lvgl.h"
-#include "../lib/sdl2/app_hal.h"
+#include "app_hal.h"
 
 #include "demos/lv_demos.h"
 
 int main(void)
 {
-    lv_init();
+	lv_init();
 
-    hal_setup();
+	hal_setup();
 
-    lv_demo_widgets();
+  lv_demo_widgets();
 
-    hal_loop();
+	hal_loop();
 }
