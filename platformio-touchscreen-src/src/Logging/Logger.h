@@ -1,7 +1,8 @@
-#ifndef MITM_RS485_SNIFFER_AND_REPEATER_SERIAL_LOGGER_H
-#define MITM_RS485_SNIFFER_AND_REPEATER_SERIAL_LOGGER_H
+#ifndef SERIAL_LOGGER_H
+#define SERIAL_LOGGER_H
 
 #include <Arduino.h>
+#include <string>
 #include <utility>
 #include "../Models/LogLevelEnum.h"
 
@@ -42,4 +43,4 @@ private:
     bool *_debugSerialOn;
 };
 
-#endif //MITM_RS485_SNIFFER_AND_REPEATER_SERIAL_LOGGER_H
+#endif // SERIAL_LOGGER_H
