@@ -5,6 +5,7 @@
 
 #include "lvgl_port_v8.h"
 
+
 // You must plug/unplug the USB-C cable physically if you are seeing i2c transaction failed/i2c read errors
 //
 // Once you get a boot where you do not see those errors and the only console output is the IDLE loop
