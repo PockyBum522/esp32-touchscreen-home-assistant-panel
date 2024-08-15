@@ -50,6 +50,7 @@ static const lv_font_t * font_normal;
 // Mine
 static lv_obj_t * garageButton;
 static lv_obj_t * denLightsButton;
+static lv_obj_t * tvButton;
 
 
 void connectWifi();
@@ -368,7 +369,6 @@ void make_garage_door_button_with_style()
     lv_obj_add_style(garageButton, &style_pr, LV_STATE_PRESSED);
 }
 
-
 void make_den_lights_button_with_style()
 {
     static constexpr lv_style_prop_t props[] = {LV_STYLE_BG_COLOR, LV_STYLE_BORDER_COLOR, LV_STYLE_BORDER_WIDTH};
@@ -413,6 +413,50 @@ void make_den_lights_button_with_style()
     //lv_obj_center(denLightsButton);
 }
 
+void make_tv_button_with_style()
+{
+    static constexpr lv_style_prop_t props[] = {LV_STYLE_BG_COLOR, LV_STYLE_BORDER_COLOR, LV_STYLE_BORDER_WIDTH};
+
+    /* A default transition, make it fast (100ms) and start with some delay (200 ms)*/
+    static lv_style_transition_dsc_t trans_def;
+    lv_style_transition_dsc_init(&trans_def, props, lv_anim_path_linear, 200, 200, NULL);
+
+    /* A special transition when going to pressed state. Make it slow (500 ms) but start  without delay*/
+    static lv_style_transition_dsc_t trans_pr;
+    lv_style_transition_dsc_init(&trans_pr, props, lv_anim_path_linear, 500, 0, NULL);
+
+    static lv_style_t style_def;
+    lv_style_init(&style_def);
+    lv_style_set_transition(&style_def, &trans_def);
+
+    static lv_style_t style_pr;
+    lv_style_init(&style_pr);
+    lv_style_set_bg_color(&style_pr, lv_palette_darken(LV_PALETTE_RED, 200));
+    lv_style_set_border_width(&style_pr, 66);
+    lv_style_set_border_color(&style_pr, lv_palette_darken(LV_PALETTE_RED, 100));
+    lv_style_set_transition(&style_pr, &trans_pr);
+
+
+    // Make the actual button
+    tvButton = lv_btn_create(lv_scr_act());
+    lv_obj_set_size(tvButton, 100, 100);
+    lv_obj_set_pos(tvButton, 400, 20);
+
+    lv_obj_t * btn_label = lv_label_create(tvButton);
+
+    lv_label_set_text(btn_label, "TV Power");
+    static std::string buttonName = "tv_power_button";
+
+    lv_obj_center(btn_label);
+    lv_obj_add_event_cb(tvButton, event_button, LV_EVENT_ALL, &buttonName);
+
+    /*Create an object with the new style_pr*/
+    lv_obj_add_style(tvButton, &style_def, 0);
+    lv_obj_add_style(tvButton, &style_pr, LV_STATE_PRESSED);
+
+    //lv_obj_center(denLightsButton);
+}
+
 void lvglInitComponents()
 {
     font_large = LV_FONT_DEFAULT;
@@ -432,4 +476,5 @@ void lvglInitComponents()
 
     make_den_lights_button_with_style();
 
+    make_tv_button_with_style();
 }
