@@ -2,6 +2,7 @@
 #include <Secrets/Secrets.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ESP32Time.h>
 #include <ElegantOTA.h>
 #include <ESP_Panel_Library.h>
 #include <lvgl.h>
@@ -36,8 +37,7 @@ auto logger = *new Logger(Information, &m_debugSerialOn);
 WebServer server(80);
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
-
-
+ESP32Time rtc(0);
 
 // LVGL stuff
 static lv_style_t style_text_muted;
@@ -140,6 +140,16 @@ void loop()
     ElegantOTA.loop();
 
     mqttClient.loop();
+
+    // Restart after 5 minutes to reset vertical screen shifting issue
+    if (rtc.getLocalEpoch() > 300)
+    {
+        rtc.setTime(0);
+        ESP.restart();
+    }
+
+    // Delay that helps (slightly) with vertical screen shifting issue
+    delay(200);
 }
 
 
@@ -263,19 +273,19 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     newMessage += payloadStr;
     newMessage += "'";
 
+    mqttClient.publish(SECRETS::MqttTopicGeneralStatus,  newMessage.c_str());
     mqttClient.publish(SECRETS::MqttTopicDeviceStatus,  newMessage.c_str());
 
-    // if (topicStr == SECRETS::MqttTopicCommand)
-    // {
-    //     double newRpm = payloadStr.toDouble();
-    //
-    //     String incomingMessage = payloadStr;
-    //     incomingMessage += " <= New";
-    //
-    //
-    //
-    //     mqttClient.publish(SECRETS::MqttTopicDeviceStatus,  incomingMessage.c_str());
-    // }
+    if (topicStr == SECRETS::MqttTopicGeneralStatus)
+    {
+        if (payloadStr == "info")
+        {
+            String incomingMessage = payloadStr;
+            incomingMessage += " <= New";
+
+            mqttClient.publish(SECRETS::MqttTopicDeviceStatus,  incomingMessage.c_str());
+        }
+    }
 }
 
 
@@ -352,7 +362,7 @@ void make_garage_door_button_with_style()
 
     // Make the actual button
     garageButton = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(garageButton, 140, 140);
+    lv_obj_set_size(garageButton, 140, 300);
     lv_obj_set_pos(garageButton, 20, 20);
 
     lv_obj_t * btn_label = lv_label_create(garageButton);
@@ -395,7 +405,7 @@ void make_den_lights_button_with_style()
 
     // Make the actual button
     denLightsButton = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(denLightsButton, 100, 100);
+    lv_obj_set_size(denLightsButton, 100, 300);
     lv_obj_set_pos(denLightsButton, 200, 20);
 
     lv_obj_t * btn_label = lv_label_create(denLightsButton);
@@ -439,7 +449,7 @@ void make_tv_button_with_style()
 
     // Make the actual button
     tvButton = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(tvButton, 100, 100);
+    lv_obj_set_size(tvButton, 100, 300);
     lv_obj_set_pos(tvButton, 400, 20);
 
     lv_obj_t * btn_label = lv_label_create(tvButton);
