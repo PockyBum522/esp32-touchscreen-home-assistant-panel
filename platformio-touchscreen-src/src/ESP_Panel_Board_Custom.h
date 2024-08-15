@@ -97,7 +97,8 @@
 
 #elif ESP_PANEL_LCD_BUS_TYPE == ESP_PANEL_BUS_TYPE_RGB
 
-
+    // 12 * 1000 * 1000 seems to help greatly with the vertical screen shifting issue but does not completely fix it
+    // and is also very close to the lower edge of what the screen clock can handle
     #define ESP_PANEL_LCD_RGB_CLK_HZ            (12 * 1000 * 1000)
     #define ESP_PANEL_LCD_RGB_HPW               (4)
     #define ESP_PANEL_LCD_RGB_HBP               (8)
