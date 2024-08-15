@@ -1,4 +1,10 @@
+#include "Logging/Logger.h"
+
 #include <Arduino.h>
+#include <ESP32Time.h>
+#include <Secrets/Secrets.h>
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+#include <ElegantOTA.h>
 #include <ESP_Panel_Library.h>
 #include <lvgl.h>
 #include <lvglComponentsInitializer.h>
@@ -14,12 +20,16 @@
 // physically unplug the board again.
 
 
+bool m_debugSerialOn = false;
+
 constexpr uint8_t IO_EXPANDER_TOUCH_PANEL_RESET = 1;
 constexpr uint8_t IO_EXPANDER_LCD_BACKLIGHT = 2;
 constexpr uint8_t IO_EXPANDER_LCD_RESET = 3;
 constexpr uint8_t IO_EXPANDER_SD_CS = 4;
 constexpr uint8_t IO_EXPANDER_USB_SELECT = 5;
 
+// Dependency setup
+auto logger = *new Logger(Information, &m_debugSerialOn);
 
 void setup()
 {
@@ -50,6 +60,8 @@ void setup()
     lvgl_port_init(panel->getLcd(), panel->getTouch());
     delay(150);
 
+    lv_init();
+
     Serial.println("Create UI");
     /* Lock the mutex due to the LVGL APIs are not thread-safe */
     lvgl_port_lock(-1);
@@ -61,8 +73,6 @@ void setup()
     lvgl_port_unlock();
 
     Serial.println(title + " end");
-
-    lv_init();
 
     /*Output prompt information to the console, you can also use printf() to print directly*/
     LV_LOG_USER("LVGL initialization completed!");
