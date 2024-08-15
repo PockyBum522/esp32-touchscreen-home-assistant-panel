@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include "lvglComponentsInitializer.h"
 #include <cstdint>
 #include <extra/widgets/chart/lv_chart.h>
@@ -14,14 +15,95 @@ static lv_style_t style_bullet;
 static const lv_font_t * font_large;
 static const lv_font_t * font_normal;
 
+
+// Mine
+static lv_obj_t * garageButton;
+
+void make_background_dark()
+{
+    /*Change the active screen's background color*/
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x111111), LV_PART_MAIN);
+}
+
+void static event_garage_door_button(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    //lv_obj_t * label = lv_event_get_user_data(e);
+
+    switch(code)
+    {
+        case LV_EVENT_PRESSED:
+            Serial.println("The last button event:\nLV_EVENT_PRESSED");
+        break;
+
+        case LV_EVENT_CLICKED:
+            Serial.println("The last button event:\nLV_EVENT_CLICKED");
+        break;
+
+        case LV_EVENT_LONG_PRESSED:
+            Serial.println("The last button event:\nLV_EVENT_LONG_PRESSED");
+        break;
+
+        case LV_EVENT_LONG_PRESSED_REPEAT:
+            Serial.println("The last button event:\nLV_EVENT_LONG_PRESSED_REPEAT");
+        break;
+
+        default:
+            break;
+    }
+}
+
+void make_garage_door_open_button()
+{
+    garageButton = lv_btn_create(lv_scr_act());
+    lv_obj_set_size(garageButton, 140, 140);
+    lv_obj_center(garageButton);
+
+    lv_obj_t * btn_label = lv_label_create(garageButton);
+    lv_label_set_text(btn_label, "Garage Door");
+    lv_obj_center(btn_label);
+
+    lv_obj_add_event_cb(garageButton, event_garage_door_button, LV_EVENT_ALL, NULL);
+}
+
+void make_garage_door_button_with_style()
+{
+    static constexpr lv_style_prop_t props[] = {LV_STYLE_BG_COLOR, LV_STYLE_BORDER_COLOR, LV_STYLE_BORDER_WIDTH};
+
+    /* A default transition, make it fast (100ms) and start with some delay (200 ms)*/
+    static lv_style_transition_dsc_t trans_def;
+    lv_style_transition_dsc_init(&trans_def, props, lv_anim_path_linear, 400, 3000, NULL);
+
+    /* A special transition when going to pressed state. Make it slow (500 ms) but start  without delay*/
+    static lv_style_transition_dsc_t trans_pr;
+    lv_style_transition_dsc_init(&trans_pr, props, lv_anim_path_linear, 4000, 0, NULL);
+
+    static lv_style_t style_def;
+    lv_style_init(&style_def);
+    lv_style_set_transition(&style_def, &trans_def);
+
+    static lv_style_t style_pr;
+    lv_style_init(&style_pr);
+    lv_style_set_bg_color(&style_pr, lv_palette_main(LV_PALETTE_RED));
+    lv_style_set_border_width(&style_pr, 66);
+    lv_style_set_border_color(&style_pr, lv_palette_darken(LV_PALETTE_RED, 100));
+    lv_style_set_transition(&style_pr, &trans_pr);
+
+    make_garage_door_open_button();
+
+    /*Create an object with the new style_pr*/
+    lv_obj_add_style(garageButton, &style_def, 0);
+    lv_obj_add_style(garageButton, &style_pr, LV_STATE_PRESSED);
+
+    lv_obj_center(garageButton);
+}
+
 void LvglComponentsInitializer::InitComponents()
 {
-    lv_coord_t tab_height = 20;
-
     font_large = LV_FONT_DEFAULT;
     font_normal = LV_FONT_DEFAULT;
 
-    lv_theme_default_init(NULL, lv_palette_main(LV_PALETTE_BLUE), lv_palette_main(LV_PALETTE_RED), LV_THEME_DEFAULT_DARK, font_normal);
+    lv_theme_default_init(NULL, lv_palette_main(LV_PALETTE_GREEN), lv_palette_main(LV_PALETTE_RED), LV_THEME_DEFAULT_DARK, font_normal);
 
     lv_style_init(&style_text_muted);
     lv_style_set_text_opa(&style_text_muted, LV_OPA_50);
@@ -29,127 +111,8 @@ void LvglComponentsInitializer::InitComponents()
     lv_style_init(&style_title);
     lv_style_set_text_font(&style_title, font_large);
 
-    lv_style_init(&style_icon);
-    lv_style_set_text_color(&style_icon, lv_theme_get_color_primary(NULL));
-    lv_style_set_text_font(&style_icon, font_large);
+    make_background_dark();
 
-    lv_style_init(&style_bullet);
-    lv_style_set_border_width(&style_bullet, 0);
-    lv_style_set_radius(&style_bullet, LV_RADIUS_CIRCLE);
+    make_garage_door_button_with_style();
 
-    tv = lv_tabview_create(lv_scr_act(), LV_DIR_TOP, tab_height);
-
-    lv_obj_set_style_text_font(lv_scr_act(), font_normal, 0);
-
-    lv_obj_t * tab_btns = lv_tabview_get_tab_btns(tv);
-    lv_obj_set_style_pad_left(tab_btns, LV_HOR_RES / 2, 0);
-
-    lv_obj_t * t1 = lv_tabview_add_tab(tv, "Controls");
-    lv_obj_t * t2 = lv_tabview_add_tab(tv, "Cameras");
-    profile_create(t1);
-}
-
-static void profile_create(lv_obj_t * parent)
-{
-    lv_obj_t * panel1 = lv_obj_create(parent);
-    lv_obj_set_height(panel1, LV_SIZE_CONTENT);
-
-    lv_obj_t * email_icn = lv_label_create(panel1);
-    lv_obj_add_style(email_icn, &style_icon, 0);
-    lv_label_set_text(email_icn, LV_SYMBOL_ENVELOPE);
-
-    lv_obj_t * email_label = lv_label_create(panel1);
-    lv_label_set_text(email_label, " ");
-
-    lv_obj_t * call_icn = lv_label_create(panel1);
-    lv_obj_add_style(call_icn, &style_icon, 0);
-    lv_label_set_text(call_icn, LV_SYMBOL_CALL);
-
-    lv_obj_t * call_label = lv_label_create(panel1);
-    lv_label_set_text(call_label, " ");
-
-    lv_obj_t * log_out_btn = lv_btn_create(panel1);
-    lv_obj_set_height(log_out_btn, LV_SIZE_CONTENT);
-
-    lv_obj_t * label = lv_label_create(log_out_btn);
-    lv_label_set_text(label, " ");
-    lv_obj_center(label);
-
-    lv_obj_t * invite_btn = lv_btn_create(panel1);
-    lv_obj_add_state(invite_btn, LV_STATE_DISABLED);
-    lv_obj_set_height(invite_btn, LV_SIZE_CONTENT);
-
-    label = lv_label_create(invite_btn);
-    lv_label_set_text(label, " ");
-    lv_obj_center(label);
-
-    /*Create a keyboard*/
-    lv_obj_t * kb = lv_keyboard_create(lv_scr_act());
-    lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
-
-    /*Create the third panel*/
-    lv_obj_t * panel3 = lv_obj_create(parent);
-    lv_obj_t * panel3_title = lv_label_create(panel3);
-    lv_label_set_text(panel3_title, "Control");
-    lv_obj_add_style(panel3_title, &style_title, 0);
-
-    lv_obj_t * team_player_label = lv_label_create(panel3);
-    lv_label_set_text(team_player_label, "Garage Door");
-    lv_obj_add_style(team_player_label, &style_text_muted, 0);
-
-    lv_obj_t * sw2 = lv_switch_create(panel3);
-
-    static lv_coord_t grid_main_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t grid_main_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
-
-    /*Create the top panel*/
-    static lv_coord_t grid_1_col_dsc[] = {LV_GRID_CONTENT, 5, LV_GRID_CONTENT, LV_GRID_FR(2), LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t grid_1_row_dsc[] = {LV_GRID_CONTENT, LV_GRID_CONTENT, 10, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST};
-
-    static lv_coord_t grid_2_col_dsc[] = {LV_GRID_FR(1), LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST};
-    static lv_coord_t grid_2_row_dsc[] = {
-        LV_GRID_CONTENT,  /*Title*/
-        5,                /*Separator*/
-        LV_GRID_CONTENT,  /*Box title*/
-        30,               /*Boxes*/
-        5,                /*Separator*/
-        LV_GRID_CONTENT,  /*Box title*/
-        30,               /*Boxes*/
-        LV_GRID_TEMPLATE_LAST
-    };
-
-    lv_obj_set_grid_dsc_array(parent, grid_main_col_dsc, grid_main_row_dsc);
-
-    lv_obj_set_grid_cell(panel1, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 0, 1);
-
-    lv_obj_set_grid_dsc_array(panel1, grid_1_col_dsc, grid_1_row_dsc);
-
-    lv_obj_set_grid_cell(email_icn, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-    lv_obj_set_grid_cell(email_label, LV_GRID_ALIGN_START, 3, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-    lv_obj_set_grid_cell(call_icn, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 4, 1);
-    lv_obj_set_grid_cell(call_label, LV_GRID_ALIGN_START, 3, 1, LV_GRID_ALIGN_CENTER, 4, 1);
-    lv_obj_set_grid_cell(log_out_btn, LV_GRID_ALIGN_STRETCH, 4, 1, LV_GRID_ALIGN_CENTER, 3, 2);
-    lv_obj_set_grid_cell(invite_btn, LV_GRID_ALIGN_STRETCH, 5, 1, LV_GRID_ALIGN_CENTER, 3, 2);
-
-
-    lv_obj_set_grid_cell(panel3, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH, 1, 1);
-    lv_obj_set_grid_dsc_array(panel3, grid_2_col_dsc, grid_2_row_dsc);
-    lv_obj_set_grid_cell(panel3_title, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(sw2, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 6, 1);
-    lv_obj_set_grid_cell(team_player_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 5, 1);
-    lv_obj_set_grid_cell(panel1, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
-
-    lv_obj_set_grid_cell(email_icn, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-    lv_obj_set_grid_cell(email_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
-    lv_obj_set_grid_cell(call_icn, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 4, 1);
-    lv_obj_set_grid_cell(call_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_CENTER, 4, 1);
-    lv_obj_set_grid_cell(log_out_btn, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 5, 1);
-    lv_obj_set_grid_cell(invite_btn, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 6, 1);
-
-
-    lv_obj_set_height(panel3, LV_SIZE_CONTENT);
-    lv_obj_set_grid_cell(panel3, LV_GRID_ALIGN_STRETCH, 0, 1, LV_GRID_ALIGN_START, 2, 1);
-    lv_obj_set_grid_cell(panel3_title, LV_GRID_ALIGN_START, 0, 2, LV_GRID_ALIGN_CENTER, 0, 1);
-    lv_obj_set_grid_cell(team_player_label, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 4, 1);
-    lv_obj_set_grid_cell(sw2, LV_GRID_ALIGN_START, 1, 1, LV_GRID_ALIGN_START, 5, 1);
 }
