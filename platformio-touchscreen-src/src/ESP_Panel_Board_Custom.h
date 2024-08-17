@@ -99,14 +99,14 @@
 
     // 12 * 1000 * 1000 seems to help greatly with the vertical screen shifting issue but does not completely fix it
     // and is also very close to the lower edge of what the screen clock can handle
-    #define ESP_PANEL_LCD_RGB_CLK_HZ            (12 * 1000 * 1000)
+    #define ESP_PANEL_LCD_RGB_CLK_HZ            (16 * 1000 * 1000)
     #define ESP_PANEL_LCD_RGB_HPW               (4)
     #define ESP_PANEL_LCD_RGB_HBP               (8)
     #define ESP_PANEL_LCD_RGB_HFP               (8)
     #define ESP_PANEL_LCD_RGB_VPW               (4)
-    #define ESP_PANEL_LCD_RGB_VBP               (8)
-    #define ESP_PANEL_LCD_RGB_VFP               (8)
-    #define ESP_PANEL_LCD_RGB_PCLK_ACTIVE_NEG   (0)     // 0: rising edge, 1: falling edge
+    #define ESP_PANEL_LCD_RGB_VBP               (16)
+    #define ESP_PANEL_LCD_RGB_VFP               (16)
+    #define ESP_PANEL_LCD_RGB_PCLK_ACTIVE_NEG   (1)     // 0: rising edge, 1: falling edge
     #define ESP_PANEL_LCD_RGB_DATA_WIDTH        (16)    //  8 | 16
     #define ESP_PANEL_LCD_RGB_PIXEL_BITS        (16)    // 24 | 16
     #define ESP_PANEL_LCD_RGB_FRAME_BUF_NUM     (1)     // 1/2/3
