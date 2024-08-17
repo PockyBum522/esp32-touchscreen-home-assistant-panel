@@ -8,6 +8,17 @@
 
 // *INDENT-OFF*
 
+#define I2C_MASTER_SCL_IO           9       /*!< GPIO number used for I2C master clock */
+#define I2C_MASTER_SDA_IO           8       /*!< GPIO number used for I2C master data  */
+#define I2C_MASTER_NUM              I2C_NUM_0       /*!< I2C master i2c port number, the number of i2c peripheral interfaces available will depend on the chip */
+#define I2C_MASTER_FREQ_HZ          400000                     /*!< I2C master clock frequency */
+#define I2C_MASTER_TX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
+#define I2C_MASTER_RX_BUF_DISABLE   0                          /*!< I2C master doesn't need buffer */
+#define I2C_MASTER_TIMEOUT_MS       1000
+
+#define GPIO_INPUT_IO_4    4
+#define GPIO_INPUT_PIN_SEL  1ULL<<GPIO_INPUT_IO_4
+
 /* Set to 1 if using a custom board */
 #define ESP_PANEL_USE_CUSTOM_BOARD       (1)         // 0/1
 
@@ -22,7 +33,6 @@
 #if ESP_PANEL_USE_LCD
 /**
  * LCD Controller Name. Choose one of the following:
- *      - EK9716B
  *      - GC9A01, GC9B71, GC9503
  *      - ILI9341
  *      - NV3022B
@@ -97,8 +107,6 @@
 
 #elif ESP_PANEL_LCD_BUS_TYPE == ESP_PANEL_BUS_TYPE_RGB
 
-    // 12 * 1000 * 1000 seems to help greatly with the vertical screen shifting issue but does not completely fix it
-    // and is also very close to the lower edge of what the screen clock can handle
     #define ESP_PANEL_LCD_RGB_CLK_HZ            (16 * 1000 * 1000)
     #define ESP_PANEL_LCD_RGB_HPW               (4)
     #define ESP_PANEL_LCD_RGB_HBP               (8)
@@ -137,7 +145,6 @@
     #define ESP_PANEL_LCD_RGB_IO_DATA14         (41)
     #define ESP_PANEL_LCD_RGB_IO_DATA15         (40)
 #endif
-
 #if !ESP_PANEL_LCD_BUS_SKIP_INIT_HOST
     #define ESP_PANEL_LCD_3WIRE_SPI_IO_CS               (0)
     #define ESP_PANEL_LCD_3WIRE_SPI_IO_SCK              (1)
@@ -160,7 +167,7 @@
 #endif /* ESP_PANEL_LCD_BUS_TYPE */
 
 /**
- * LCD Vendor Initialization Commands.
+ * LCD Venbdor Initialization Commands.
  *
  * Vendor specific initialization can be different between manufacturers, should consult the LCD supplier for
  * initialization sequence code. Please uncomment and change the following macro definitions. Otherwise, the LCD driver
@@ -171,8 +178,18 @@
  *   2. Formater: ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(delay_ms, command, { data0, data1, ... }) and
  *                ESP_PANEL_LCD_CMD_WITH_NONE_PARAM(delay_ms, command)
  */
-
-
+// #define ESP_PANEL_LCD_VENDOR_INIT_CMD()                                        \
+//     {                                                                          \
+//         {0xFF, (uint8_t []){0x77, 0x01, 0x00, 0x00, 0x10}, 5, 0},              \
+//         {0xC0, (uint8_t []){0x3B, 0x00}, 2, 0},                                \
+//         {0xC1, (uint8_t []){0x0D, 0x02}, 2, 0},                                \
+//         {0x29, (uint8_t []){0x00}, 0, 120},                                    \
+//         or                                                                     \
+//         ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xFF, {0x77, 0x01, 0x00, 0x00, 0x10}), \
+//         ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xC0, {0x3B, 0x00}),                   \
+//         ESP_PANEL_LCD_CMD_WITH_8BIT_PARAM(0, 0xC1, {0x0D, 0x02}),                   \
+//         ESP_PANEL_LCD_CMD_WITH_NONE_PARAM(120, 0x29),                               \
+//     }
 
 /* LCD Color Settings */
 /* LCD color depth in bits */
@@ -191,9 +208,9 @@
 #define ESP_PANEL_LCD_MIRROR_Y      (0)         // 0/1
 
 /* LCD Other Settings */
-/* Reset pin */
-#define ESP_PANEL_LCD_IO_RST          (-1)      // IO num of RESET pin, set to -1 if not use
-#define ESP_PANEL_LCD_RST_LEVEL       (0)       // Active level. 0: low level, 1: high level
+/* IO num of RESET pin, set to -1 if not use */
+#define ESP_PANEL_LCD_IO_RST        (-1)
+#define ESP_PANEL_LCD_RST_LEVEL     (0)         // 0: low level, 1: high level
 
 #endif /* ESP_PANEL_USE_LCD */
 
@@ -223,7 +240,7 @@
  * If set to 1, the bus will skip to initialize the corresponding host. Users need to initialize the host in advance.
  * It is useful if other devices use the same host. Please ensure that the host is initialized only once.
  */
-#define ESP_PANEL_TOUCH_BUS_SKIP_INIT_HOST      (0)     // 0/1
+#define ESP_PANEL_TOUCH_BUS_SKIP_INIT_HOST      (1)     // 0/1
 /**
  * Touch panel bus type. Choose one of the following:
  *      - ESP_PANEL_BUS_TYPE_I2C
@@ -234,16 +251,12 @@
 #if ESP_PANEL_TOUCH_BUS_TYPE == ESP_PANEL_BUS_TYPE_I2C
 
     #define ESP_PANEL_TOUCH_BUS_HOST_ID     (0)     // Typically set to 0
-    #define ESP_PANEL_TOUCH_I2C_ADDRESS     (0)     // Typically set to 0 to use the default address.
-                                                    // - For touchs with only one address, set to 0
-                                                    // - For touchs with multiple addresses, set to 0 or the address
-                                                    //   Like GT911, there are two addresses: 0x5D(default) and 0x14
+    #define ESP_PANEL_TOUCH_I2C_ADDRESS     (0)     // Typically set to 0 to use default address
 #if !ESP_PANEL_TOUCH_BUS_SKIP_INIT_HOST
     #define ESP_PANEL_TOUCH_I2C_CLK_HZ      (400 * 1000)
                                                     // Typically set to 400K
     #define ESP_PANEL_TOUCH_I2C_SCL_PULLUP  (1)     // 0/1
     #define ESP_PANEL_TOUCH_I2C_SDA_PULLUP  (1)     // 0/1
-    //#define ESP_PANEL_TOUCH_I2C_IO_SCL      (18)
     #define ESP_PANEL_TOUCH_I2C_IO_SCL      (9)
     #define ESP_PANEL_TOUCH_I2C_IO_SDA      (8)
 #endif
@@ -272,14 +285,12 @@
 #define ESP_PANEL_TOUCH_MIRROR_Y        (0)         // 0/1
 
 /* Touch Other Settings */
-/* Reset pin */
-#define ESP_PANEL_TOUCH_IO_RST          (-1)        // IO num of RESET pin, set to -1 if not use
-                                                    // For GT911, the RST pin is also used to configure the I2C address
-#define ESP_PANEL_TOUCH_RST_LEVEL       (0)         // Active level. 0: low level, 1: high level
-/* Interrupt pin */
-#define ESP_PANEL_TOUCH_IO_INT          (-1)        // IO num of INT pin, set to -1 if not use
-                                                    // For GT911, the INT pin is also used to configure the I2C address
-#define ESP_PANEL_TOUCH_INT_LEVEL       (0)         // Active level. 0: low level, 1: high level
+/* IO num of RESET pin, set to -1 if not use */
+#define ESP_PANEL_TOUCH_IO_RST          (-1)
+#define ESP_PANEL_TOUCH_RST_LEVEL       (0)         // 0: low level, 1: high level
+/* IO num of INT pin, set to -1 if not use */
+#define ESP_PANEL_TOUCH_IO_INT          (-1)
+#define ESP_PANEL_TOUCH_INT_LEVEL       (0)         // 0: low level, 1: high level
 
 #endif /* ESP_PANEL_USE_TOUCH */
 
@@ -288,8 +299,8 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #define ESP_PANEL_USE_BACKLIGHT         (0)         // 0/1
 #if ESP_PANEL_USE_BACKLIGHT
-/* Backlight pin */
-#define ESP_PANEL_BACKLIGHT_IO          (45)        // IO num of backlight pin
+/* IO num of backlight pin */
+#define ESP_PANEL_BACKLIGHT_IO          (45)
 #define ESP_PANEL_BACKLIGHT_ON_LEVEL    (1)         // 0: low level, 1: high level
 
 /* Set to 1 if you want to turn off the backlight after initializing the panel; otherwise, set it to turn on */
@@ -303,7 +314,7 @@
 ///////////////////////////// Please update the following macros to configure the IO expander //////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /* Set to 0 if not using IO Expander */
-#define ESP_PANEL_USE_EXPANDER          (1)         // 0/1
+#define ESP_PANEL_USE_EXPANDER          (0)         // 0/1
 #if ESP_PANEL_USE_EXPANDER
 /**
  * IO expander name. Choose one of the following:
@@ -312,20 +323,20 @@
  *      - TCA95xx_8bit
  *      - TCA95xx_16bit
  */
-#define ESP_PANEL_EXPANDER_NAME         CH422G
+#define ESP_PANEL_EXPANDER_NAME         TCA95xx_8bit
 
 /* IO expander Settings */
 /**
  * If set to 1, the driver will skip to initialize the corresponding host. Users need to initialize the host in advance.
  * It is useful if other devices use the same host. Please ensure that the host is initialized only once.
  */
-#define ESP_PANEL_EXPANDER_SKIP_INIT_HOST       (1)     // 0/1
+#define ESP_PANEL_EXPANDER_SKIP_INIT_HOST       (0)     // 0/1
 /* IO expander parameters */
-#define ESP_PANEL_EXPANDER_HOST_ID              (0)     // Typically set to 0
 #define ESP_PANEL_EXPANDER_I2C_ADDRESS          (0x20)  // The actual I2C address. Even for the same model of IC,
                                                         // the I2C address may be different, and confirmation based on
                                                         // the actual hardware connection is required
 #if !ESP_PANEL_EXPANDER_SKIP_INIT_HOST
+    #define ESP_PANEL_EXPANDER_HOST_ID          (0)     // Typically set to 0
     #define ESP_PANEL_EXPANDER_I2C_CLK_HZ       (400 * 1000)
                                                         // Typically set to 400K
     #define ESP_PANEL_EXPANDER_I2C_SCL_PULLUP   (1)     // 0/1
@@ -349,9 +360,6 @@
 // #define ESP_PANEL_BEGIN_BACKLIGHT_END_FUNCTION( panel )
 // #define ESP_PANEL_BEGIN_END_FUNCTION( panel )
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////// File Version ///////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /**
  * Do not change the following versions, they are used to check if the configurations in this file are compatible with
  * the current version of `ESP_Panel_Board_Custom.h` in the library. The detailed rules are as follows:
@@ -364,8 +372,8 @@
  *
  */
 #define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_MAJOR 0
-#define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_MINOR 2
-#define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_PATCH 2
+#define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_MINOR 1
+#define ESP_PANEL_BOARD_CUSTOM_FILE_VERSION_PATCH 1
 
 #endif /* ESP_PANEL_USE_CUSTOM_BOARD */
 
