@@ -1,3 +1,47 @@
+/**
+ * # LVGL Porting Example
+ *
+ * The example demonstrates how to port LVGL (v8.3.x). And for RGB LCD, it can enable the avoid tearing fucntion.
+ *
+ * ## How to Use
+ *
+ * To use this example, please firstly install the following dependent libraries:
+ *
+ * - lvgl (v8.3.x)
+ *
+ * Then follow the steps below to configure:
+ *
+ * 1. For **ESP32_Display_Panel**:
+ *
+ *    - [Configure drivers](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-drivers) if needed.
+ *    - If using a supported development board, follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#using-supported-development-boards) to configure it.
+ *    - If using a custom board, follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#using-custom-development-boards) to configure it.
+ *
+ * 2. Follow the [steps](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-lvgl) to configure the **lvgl**.
+ * 3. Modify the macros in the [lvgl_port_v8.h](./lvgl_port_v8.h) file to configure the LVGL porting parameters.
+ * 4. Navigate to the `Tools` menu in the Arduino IDE to choose a ESP board and configure its parameters, please refter to [Configuring Supported Development Boards](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-supported-development-boards)
+ * 5. Verify and upload the example to your ESP board.
+ *
+ * ## Serial Output
+ *
+ * ```bash
+ * ...
+ * LVGL porting example start
+ * Initialize panel device
+ * Initialize LVGL
+ * Create UI
+ * LVGL porting example end
+ * IDLE loop
+ * IDLE loop
+ * ...
+ * ```
+ *
+ * ## Troubleshooting
+ *
+ * Please check the [FAQ](https://github.com/esp-arduino-libs/ESP32_Display_Panel#faq) first to see if the same question exists. If not, please create a [Github issue](https://github.com/esp-arduino-libs/ESP32_Display_Panel/issues). We will get back to you as soon as possible.
+ *
+ */
+
 #include <Arduino.h>
 #include <Secrets/Secrets.h>
 #include <WiFi.h>
@@ -8,17 +52,10 @@
 #include <lvgl.h>
 #include <cstdint>
 #include <src/widgets/lv_label.h>
+#include <ESP_IOExpander_Library.h>
 
 #include "Logging/Logger.h"
 #include "lvgl_port_v8.h"
-
-
-// You must plug/unplug the USB-C cable physically if you are seeing i2c transaction failed/i2c read errors
-//
-// Once you get a boot where you do not see those errors and the only console output is the IDLE loop
-//
-// Then you can upload new code/or reset the board as much as you want and you shouldn't see i2c errors until you
-// physically unplug the board again.
 
 
 bool m_debugSerialOn = true;
@@ -26,18 +63,13 @@ bool m_debugSerialOn = true;
 String m_versionNumber = "v01";
 String m_applicationName = "Den Touchscreen";
 
-constexpr uint8_t IO_EXPANDER_TOUCH_PANEL_RESET = 1;
-constexpr uint8_t IO_EXPANDER_LCD_BACKLIGHT = 2;
-constexpr uint8_t IO_EXPANDER_LCD_RESET = 3;
-constexpr uint8_t IO_EXPANDER_SD_CS = 4;
-constexpr uint8_t IO_EXPANDER_USB_SELECT = 5;
 
-// Dependency setup
-auto logger = *new Logger(Information, &m_debugSerialOn);
-WebServer server(80);
-WiFiClient espClient;
-PubSubClient mqttClient(espClient);
-ESP32Time rtc(0);
+// Extend IO Pin define
+#define TP_RST 1
+#define LCD_BL 2
+#define LCD_RST 3
+#define SD_CS 4
+#define USB_SEL 5
 
 // LVGL stuff
 static lv_style_t style_text_muted;
@@ -51,6 +83,14 @@ static const lv_font_t * font_normal;
 static lv_obj_t * garageButton;
 static lv_obj_t * denLightsButton;
 static lv_obj_t * tvButton;
+
+
+// Dependency setup
+auto logger = *new Logger(Information, &m_debugSerialOn);
+WebServer server(80);
+WiFiClient espClient;
+PubSubClient mqttClient(espClient);
+ESP32Time rtc(0);
 
 
 void connectWifi();
@@ -70,87 +110,90 @@ void setup()
         Serial.println("Initialize panel device");
     }
 
+    String title = "LVGL porting example";
 
-    auto *panel = new ESP_Panel();
+    Serial.begin(115200);
+     pinMode(GPIO_INPUT_IO_4, OUTPUT);
+    /**
+     * These development boards require the use of an IO expander to configure the screen,
+     * so it needs to be initialized in advance and registered with the panel for use.
+     *
+     */
+    Serial.println("Initialize IO expander");
+    /* Initialize IO expander */
+    ESP_IOExpander *expander = new ESP_IOExpander_CH422G((i2c_port_t)I2C_MASTER_NUM, ESP_IO_EXPANDER_I2C_CH422G_ADDRESS_000, I2C_MASTER_SCL_IO, I2C_MASTER_SDA_IO);
+    // ESP_IOExpander *expander = new ESP_IOExpander_CH422G(I2C_MASTER_NUM, ESP_IO_EXPANDER_I2C_CH422G_ADDRESS_000);
+    expander->init();
+    expander->begin();
+    expander->multiPinMode(TP_RST | LCD_BL | LCD_RST | SD_CS | USB_SEL, OUTPUT);
+    expander->multiDigitalWrite(TP_RST | LCD_BL | LCD_RST, HIGH);
+    delay(100);
+    //gt911 initialization, must be added, otherwise the touch screen will not be recognized  
+    //gt911 初始化，必须要加，否则会无法识别到触摸屏
+    //initialization begin
+    expander->multiDigitalWrite(TP_RST | LCD_RST, LOW);
+    delay(100);
+    digitalWrite(GPIO_INPUT_IO_4, LOW);
+    delay(100);
+    expander->multiDigitalWrite(TP_RST | LCD_RST, HIGH);
+    delay(200);
+    //initialization end
+    
+    Serial.println(title + " start");
 
-    delay(150);
+    Serial.println("Initialize panel device");
+    ESP_Panel *panel = new ESP_Panel();
     panel->init();
-    delay(150);
-
 #if LVGL_PORT_AVOID_TEAR
-
     // When avoid tearing function is enabled, configure the RGB bus according to the LVGL configuration
-    auto *rgb_bus = static_cast<ESP_PanelBus_RGB *>(panel->getLcd()->getBus());
-    delay(150);
+    ESP_PanelBus_RGB *rgb_bus = static_cast<ESP_PanelBus_RGB *>(panel->getLcd()->getBus());
     rgb_bus->configRgbFrameBufferNumber(LVGL_PORT_DISP_BUFFER_NUM);
-    delay(150);
     rgb_bus->configRgbBounceBufferSize(LVGL_PORT_RGB_BOUNCE_BUFFER_SIZE);
-    delay(150);
-
 #endif
-
     panel->begin();
-    delay(150);
 
-    if (m_debugSerialOn)
-        Serial.println("Initialize LVGL");
-
+    Serial.println("Initialize LVGL");
     lvgl_port_init(panel->getLcd(), panel->getTouch());
-    delay(150);
 
-    lv_init();
-
-    if (m_debugSerialOn)
-        Serial.println("Create UI");
-
+    Serial.println("Create UI");
     /* Lock the mutex due to the LVGL APIs are not thread-safe */
     lvgl_port_lock(-1);
 
-    // Set up my LVGL screen
+    /* Create a simple label */
+    lv_obj_t *label = lv_label_create(lv_scr_act());
+    lv_label_set_text(label, title.c_str());
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+
+    /**
+     * Try an example. Don't forget to uncomment header.
+     * See all the examples online: https://docs.lvgl.io/master/examples.html
+     * source codes: https://github.com/lvgl/lvgl/tree/e7f88efa5853128bf871dde335c0ca8da9eb7731/examples
+     */
+    //  lv_example_btn_1();
+
+    /**
+     * Or try out a demo.
+     * Don't forget to uncomment header and enable the demos in `lv_conf.h`. E.g. `LV_USE_DEMOS_WIDGETS`
+     */
+
     lvglInitComponents();
+    //lv_demo_benchmark();
+    // lv_demo_music();
+    // lv_demo_stress();
 
     /* Release the mutex */
     lvgl_port_unlock();
 
-    if (m_debugSerialOn)
-        Serial.println(m_versionNumber + " end");
-
-    /*Output prompt information to the console, you can also use printf() to print directly*/
-    LV_LOG_USER("LVGL initialization completed!");
-
-    connectWifi();
-
-    server.on("/", []() {
-        server.send(200, "text/plain", "Hi! This is " + m_applicationName);
-    });
-
-    ElegantOTA.begin(&server);    // Start ElegantOTA
-    server.begin();
-
-    connectMqtt();
+    Serial.println(title + " end");
 }
 
 void loop()
 {
-    // if (m_debugSerialOn)
-    //     Serial.println("IDLE loop");
-
-    server.handleClient();
-
-    ElegantOTA.loop();
-
-    mqttClient.loop();
-
-    // Restart after 5 minutes to reset vertical screen shifting issue
-    if (rtc.getLocalEpoch() > 300)
-    {
-        rtc.setTime(0);
-        ESP.restart();
-    }
-
-    // Delay that helps (slightly) with vertical screen shifting issue
-    delay(200);
+    Serial.println("IDLE loop");
+    delay(1000);
 }
+
+
 
 
 void connectWifi()
