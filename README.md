@@ -9,4 +9,4 @@ Issues:
 
 	* Random screen vertical shifting when LVGL is animating
 	
-	* I2C communication errors (See note at top of main.cpp, power-cycling will fix this after a few attempts)
+	* FIXED: ~~I2C communication errors (See note at top of main.cpp, power-cycling will fix this after a few attempts)~~ 
