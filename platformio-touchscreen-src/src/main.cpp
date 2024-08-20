@@ -7,7 +7,7 @@
 
 #include "Logging/Logger.h"
 
-bool m_debugSerialOn = true;
+bool m_debugSerialOn = false;
 
 String m_versionNumber = "v01";
 String m_applicationName = "Den Touchscreen";
