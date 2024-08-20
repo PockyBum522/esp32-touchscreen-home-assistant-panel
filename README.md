@@ -4,6 +4,15 @@ Using a https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-7 v1.1 touchscreen to 
 
 [Commit fbf03f54052caf640e248d55e45f4b4075559762](https://github.com/PockyBum522/esp32-touchscreen-home-assistant-panel/commit/15c504be1ab20fb5113068617bda0e418f509b81) is a good commit to start at if you just need to get the 7-inch LCD board running in PlatformIO
 
+See:
+https://github.com/esp-arduino-libs/arduino-esp32-sdk/issues/1
+for what the purpose of this branch is.
+
+It's basically an example starting point for getting LVGL working on a ESP32-S3-Touch-LCD-7 v1.1 touchscreen without all my personal code for my home automation setup. 
+
+The main branch has all of that, if you're interested.
+
+
 
 Issues:
 
