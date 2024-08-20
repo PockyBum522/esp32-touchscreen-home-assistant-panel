@@ -265,6 +265,8 @@ void make_background_dark()
 
 void static event_button(lv_event_t * e)
 {
+    return;
+
     lv_event_code_t code = lv_event_get_code(e);
     //lv_obj_t * label = lv_event_get_user_data(e);
 
