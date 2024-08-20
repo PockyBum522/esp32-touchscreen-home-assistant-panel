@@ -92,7 +92,7 @@ void make_garage_door_button_with_style()
 
     // Make the actual button
     garageButton = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(garageButton, 140, 300);
+    lv_obj_set_size(garageButton, 140, 100);
     lv_obj_set_pos(garageButton, 20, 20);
 
     lv_obj_t * btn_label = lv_label_create(garageButton);
@@ -135,7 +135,7 @@ void make_den_lights_button_with_style()
 
     // Make the actual button
     denLightsButton = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(denLightsButton, 100, 300);
+    lv_obj_set_size(denLightsButton, 100, 100);
     lv_obj_set_pos(denLightsButton, 200, 20);
 
     lv_obj_t * btn_label = lv_label_create(denLightsButton);
@@ -179,8 +179,8 @@ void make_tv_button_with_style()
 
     // Make the actual button
     tvButton = lv_btn_create(lv_scr_act());
-    lv_obj_set_size(tvButton, 100, 300);
-    lv_obj_set_pos(tvButton, 400, 20);
+    lv_obj_set_size(tvButton, 100, 100);
+    lv_obj_set_pos(tvButton, 350, 20);
 
     lv_obj_t * btn_label = lv_label_create(tvButton);
 
