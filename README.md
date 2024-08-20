@@ -7,7 +7,4 @@ Using a https://www.waveshare.com/wiki/ESP32-S3-Touch-LCD-7 v1.1 touchscreen to 
 
 Issues:
 
-	* Random screen vertical shifting when LVGL is animating
-		* NOTE: I believe this vertical shifting is due to me not using the high speed version of the arduino esp32 platform mentioned in the wiki as: "Install v3.0.2-h for Arduino esp32"
-	
-	* FIXED: ~~I2C communication errors (See note at top of main.cpp, power-cycling will fix this after a few attempts)~~ 
+NOTE: I believe all of the issues are fixed. Requires further testing, but initial tests for about 10 minutes sees none of the below issues where the screen shifting was happening basically every button press before. 
