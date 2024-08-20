@@ -37,13 +37,14 @@ static lv_obj_t * garageButton;
 static lv_obj_t * denLightsButton;
 static lv_obj_t * tvButton;
 
+bool m_loopedOnce;
+
 // Dependency setup
 auto logger = *new Logger(Information, &m_debugSerialOn);
 WebServer server(80);
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 ESP32Time rtc(0);
-
 
 void connectWifi();
 void connectMqtt();
@@ -110,15 +111,63 @@ void setup()
 
     /* Release the mutex */
     lvgl_port_unlock();
+
+    /*Output prompt information to the console, you can also use printf() to print directly*/
+    LV_LOG_USER("LVGL initialization completed!");
+
+    connectWifi();
+
+    server.on("/", []() {
+        server.send(200, "text/plain", "Hi! This is " + m_applicationName);
+    });
+
+    ElegantOTA.begin(&server);    // Start ElegantOTA
+    server.begin();
+
+    connectMqtt();
 }
 
 void loop()
 {
-    Serial.println("IDLE loop");
-    delay(1000);
+    // All of these checks are just to make it so if something takes a long time, don't run the others until loop()
+    //      has finished. I don't know if LVGL runs things in between loop() but I figure it can't hurt.
+    //      ...I mean it can, but...
+
+    // MQTT
+    long long before = millis();
+    mqttClient.loop();
+    const long long afterMqtt = millis() - before;
+
+    // OTA
+    before = millis();
+
+    if (afterMqtt < 10)
+        ElegantOTA.loop();
+
+    const long long afterOta = millis() - before;
+
+    // Server
+    before = millis();
+
+    if (afterMqtt < 10 && afterOta < 10)
+        server.handleClient();
+
+    const long long afterServer = millis() - before;
+
+    if (afterServer > 10 ||
+        afterOta > 10 ||
+        afterMqtt > 10)
+    {
+        Serial.println();
+        Serial.print("server: ");
+        Serial.print(afterServer);
+        Serial.print(" ota: ");
+        Serial.print(afterOta);
+        Serial.print(" mqtt: ");
+        Serial.println(afterMqtt);
+        Serial.println();
+    }
 }
-
-
 
 
 void connectWifi()
@@ -265,8 +314,6 @@ void make_background_dark()
 
 void static event_button(lv_event_t * e)
 {
-    return;
-
     lv_event_code_t code = lv_event_get_code(e);
     //lv_obj_t * label = lv_event_get_user_data(e);
 
