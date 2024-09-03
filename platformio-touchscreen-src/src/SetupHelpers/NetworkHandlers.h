@@ -45,7 +45,6 @@ public:
         while (!m_mqttClient.connected())
         {
             m_server.handleClient();
-            ElegantOTA.loop();
 
             String client_id = "esp32-client-";
             client_id += String(WiFi.macAddress());
@@ -85,10 +84,9 @@ public:
     static void SetupOtaServer()
     {
         m_server.on("/", []() {
-            m_server.send(200, "text/plain", "Hi! This is " + m_applicationName);
+            m_server.send(200, "text/plain", "Hi! This is " + m_applicationName + " " + m_versionNumber);
         });
 
-        ElegantOTA.begin(&m_server);    // Start ElegantOTA
         m_server.begin();
     }
 
