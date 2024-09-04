@@ -8,13 +8,15 @@
 
 #include "Logging/Logger.h"
 
-bool m_debugSerialOn = false;
+bool m_debugSerialOn = true;
 
-String m_versionNumber = "v03";
+String m_versionNumber = "v07";
 String m_applicationName = "Den Touchscreen";
 
-auto m_logger = *new Logger(Information, &m_debugSerialOn);
-WebServer m_server(80);
+bool m_otaUpdateStarted = false;
+
+//auto m_logger = *new Logger(Information, &m_debugSerialOn);
+//WebServer m_server(80);
 WiFiClient m_espClient;
 PubSubClient m_mqttClient(m_espClient);
 ESP32Time m_rtc(0);
@@ -25,17 +27,15 @@ auto panel = new ESP_Panel();
 #include "SetupHelpers/LvglInitializer.h"
 #include "SetupHelpers/NetworkHandlers.h"
 
+
 void setup()
 {
-    if (m_debugSerialOn)
-    {
-        Serial.begin(115200);
+    Serial.begin(115200);
 
-        Serial.print(m_applicationName + " start - ");
-        Serial.println(m_versionNumber);
+    Serial.print(m_applicationName + " start - ");
+    Serial.println(m_versionNumber);
 
-        Serial.println("Initialize panel device");
-    }
+    Serial.println("Initialize panel device");
 
     TouchscreenHardwareInitializer::InitLcdTouchscreenHardware();
     LvglInitializer::InitLvglToTouchscreen();
@@ -43,25 +43,10 @@ void setup()
     NetworkHandlers::ConnectWifi();
     NetworkHandlers::SetupOtaServer();
     NetworkHandlers::ConnectMqtt();
-}
 
-void loop()
-{
-    // All of these checks are just to make it so if something takes a long time, don't run the others until loop()
-    //      has finished. I don't know if LVGL runs things in between loop() but I figure it can't hurt.
-    //      ...I mean it can, but...
+    ArduinoOTA.setPort(46343);
 
-    // MQTT
-    long long before = millis();
-    m_mqttClient.loop();
-    const long long afterMqtt = millis() - before;
-
-    // OTA
-    before = millis();
-
-    if (afterMqtt < 10)
-    {
-        ArduinoOTA
+    ArduinoOTA
           .onStart([]() {
             String type;
             if (ArduinoOTA.getCommand() == U_FLASH) {
@@ -78,6 +63,11 @@ void loop()
           })
           .onProgress([](unsigned int progress, unsigned int total) {
             Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+
+            if (!m_otaUpdateStarted) {
+              m_otaUpdateStarted = true;
+              Serial.println("Setting OTA flag to be the only thing that happens");
+            }
           })
           .onError([](ota_error_t error) {
             Serial.printf("Error[%u]: ", error);
@@ -94,34 +84,72 @@ void loop()
             }
           });
 
-        ArduinoOTA.begin();
-    }
-
-    const long long afterOta = millis() - before;
-
-    // Server
-    before = millis();
-
-    if (afterMqtt < 10 && afterOta < 10)
-        m_server.handleClient();
-
-    const long long afterServer = millis() - before;
-
-    // Don't do anything beyond here if we don't have debug flag on
-    if (!m_debugSerialOn) return;
-
-    if (afterServer > 10 ||
-        afterOta > 10 ||
-        afterMqtt > 10)
-    {
-        Serial.println();
-        Serial.print("server: ");
-        Serial.print(afterServer);
-        Serial.print(" ota: ");
-        Serial.print(afterOta);
-        Serial.print(" mqtt: ");
-        Serial.println(afterMqtt);
-        Serial.println();
-    }
+    ArduinoOTA.begin();
 }
 
+long counter = 10;
+
+void loop()
+{
+  // All of these checks are just to make it so if something takes a long time, don't run the others until loop()
+  //      has finished. I don't know if LVGL runs things in between loop() but I figure it can't hurt.
+  //      ...I mean it can, but...
+
+  ArduinoOTA.handle();
+
+  if (counter-- < 3)
+  {
+    counter = 3000;
+    Serial.println(m_versionNumber);
+  }
+
+  // while(m_otaUpdateStarted)
+  // {
+  //   ArduinoOTA.handle();
+  //   yield();
+  // }
+  //
+  // // MQTT
+  // long long before = millis();
+  // m_mqttClient.loop();
+  // const long long afterMqtt = millis() - before;
+  //
+  // ArduinoOTA.handle();
+  //
+  // // OTA
+  // before = millis();
+  //
+  // if (afterMqtt < 10)
+  // {
+  //   ArduinoOTA.handle();
+  // }
+  //
+  // const long long afterOta = millis() - before;
+  //
+  // // Server
+  // before = millis();
+  //
+  // // if (afterMqtt < 10 && afterOta < 10)
+  // //   m_server.handleClient();
+  //
+  // ArduinoOTA.handle();
+  //
+  // const auto afterServer = millis() - before;
+  //
+  // // Don't do anything beyond here if we don't have debug flag on
+  // if (!m_debugSerialOn) return;
+  //
+  // if (afterServer > 10 ||
+  //   afterOta > 10 ||
+  //   afterMqtt > 10)
+  // {
+  //   Serial.println();
+  //   Serial.print("server: ");
+  //   Serial.print(afterServer);
+  //   Serial.print(" ota: ");
+  //   Serial.print(afterOta);
+  //   Serial.print(" mqtt: ");
+  //   Serial.println(afterMqtt);
+  //   Serial.println();
+  // }
+}

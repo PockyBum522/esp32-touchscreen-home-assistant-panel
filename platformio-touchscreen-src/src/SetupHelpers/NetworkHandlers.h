@@ -44,7 +44,7 @@ public:
 
         while (!m_mqttClient.connected())
         {
-            m_server.handleClient();
+            //m_server.handleClient();
 
             String client_id = "esp32-client-";
             client_id += String(WiFi.macAddress());
@@ -83,11 +83,11 @@ public:
 
     static void SetupOtaServer()
     {
-        m_server.on("/", []() {
-            m_server.send(200, "text/plain", "Hi! This is " + m_applicationName + " " + m_versionNumber);
-        });
-
-        m_server.begin();
+        // m_server.on("/", []() {
+        //     m_server.send(200, "text/plain", "Hi! This is " + m_applicationName + " " + m_versionNumber);
+        // });
+        //
+        // m_server.begin();
     }
 
 private:
