@@ -2,15 +2,14 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ESP32Time.h>
-#include <ArduinoOTA.h>
+#include <ElegantOTA.h>
 #include <ESP_Panel_Library.h>
-#include <WebServer.h>
 
 #include "Logging/Logger.h"
 
 bool m_debugSerialOn = false;
 
-String m_versionNumber = "v03";
+String m_versionNumber = "v01";
 String m_applicationName = "Den Touchscreen";
 
 auto m_logger = *new Logger(Information, &m_debugSerialOn);
@@ -60,42 +59,7 @@ void loop()
     before = millis();
 
     if (afterMqtt < 10)
-    {
-        ArduinoOTA
-          .onStart([]() {
-            String type;
-            if (ArduinoOTA.getCommand() == U_FLASH) {
-              type = "sketch";
-            } else {  // U_SPIFFS
-              type = "filesystem";
-            }
-
-            // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-            Serial.println("Start updating " + type);
-          })
-          .onEnd([]() {
-            Serial.println("\nEnd");
-          })
-          .onProgress([](unsigned int progress, unsigned int total) {
-            Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-          })
-          .onError([](ota_error_t error) {
-            Serial.printf("Error[%u]: ", error);
-            if (error == OTA_AUTH_ERROR) {
-              Serial.println("Auth Failed");
-            } else if (error == OTA_BEGIN_ERROR) {
-              Serial.println("Begin Failed");
-            } else if (error == OTA_CONNECT_ERROR) {
-              Serial.println("Connect Failed");
-            } else if (error == OTA_RECEIVE_ERROR) {
-              Serial.println("Receive Failed");
-            } else if (error == OTA_END_ERROR) {
-              Serial.println("End Failed");
-            }
-          });
-
-        ArduinoOTA.begin();
-    }
+        ElegantOTA.loop();
 
     const long long afterOta = millis() - before;
 
