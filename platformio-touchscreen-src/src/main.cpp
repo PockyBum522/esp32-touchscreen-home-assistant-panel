@@ -4,13 +4,16 @@
 #include <ESP32Time.h>
 #include <ElegantOTA.h>
 #include <ESP_Panel_Library.h>
+#include <elapsedMillis.h>
 
 #include "Logging/Logger.h"
 
 bool m_debugSerialOn = false;
 
-String m_versionNumber = "v10";
+String m_versionNumber = "v14";
 String m_applicationName = "Den Touchscreen";
+
+elapsedSeconds m_sinceLastHeartbeatMessage;
 
 auto m_logger = *new Logger(Information, &m_debugSerialOn);
 WebServer m_server(80);
@@ -26,15 +29,12 @@ auto panel = new ESP_Panel();
 
 void setup()
 {
-    if (m_debugSerialOn)
-    {
-        Serial.begin(115200);
+    Serial.begin(115200);
 
-        Serial.print(m_applicationName + " start - ");
-        Serial.println(m_versionNumber);
+    Serial.print(m_applicationName + " start - ");
+    Serial.println(m_versionNumber);
 
-        Serial.println("Initialize panel device");
-    }
+    Serial.println("Initialize panel device");
 
     TouchscreenHardwareInitializer::InitLcdTouchscreenHardware();
     LvglInitializer::InitLvglToTouchscreen();
@@ -42,6 +42,9 @@ void setup()
     NetworkHandlers::ConnectWifi();
     NetworkHandlers::SetupOtaServer();
     NetworkHandlers::ConnectMqtt();
+
+    delay(1000);
+    Serial.println("Finished setup(), starting loop() - " + m_versionNumber);
 }
 
 void loop()
@@ -71,13 +74,25 @@ void loop()
 
     const long long afterServer = millis() - before;
 
+    // Reset countdown, 10 minutes
+    if (m_rtc.getLocalEpoch() > 600)
+    {
+        // reset local epoch counter
+        m_rtc.setTime(0);
 
-    if (m_rtc.getLocalEpoch() > 20)
+        m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, "10 minutes elapsed, about to restart");
+
+        ESP.restart();
+    }
+
+    // Send heartbeat message every 20 seconds
+    if (m_sinceLastHeartbeatMessage > 20)
     {
         m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, ("heartbeat_wd_" + m_versionNumber).c_str());
 
-        // reset local epoch counter
-        m_rtc.setTime(0);
+        Serial.println(("heartbeat_wd_" + m_versionNumber).c_str());
+
+        m_sinceLastHeartbeatMessage = 0;
     }
 
     // Don't do anything beyond here if we don't have debug flag on
