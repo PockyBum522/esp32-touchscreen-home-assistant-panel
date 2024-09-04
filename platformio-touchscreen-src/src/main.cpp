@@ -9,7 +9,7 @@
 
 bool m_debugSerialOn = false;
 
-String m_versionNumber = "v01";
+String m_versionNumber = "v10";
 String m_applicationName = "Den Touchscreen";
 
 auto m_logger = *new Logger(Information, &m_debugSerialOn);
@@ -70,6 +70,15 @@ void loop()
         m_server.handleClient();
 
     const long long afterServer = millis() - before;
+
+
+    if (m_rtc.getLocalEpoch() > 20)
+    {
+        m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, ("heartbeat_wd_" + m_versionNumber).c_str());
+
+        // reset local epoch counter
+        m_rtc.setTime(0);
+    }
 
     // Don't do anything beyond here if we don't have debug flag on
     if (!m_debugSerialOn) return;
