@@ -58,21 +58,21 @@ void loop()
     m_mqttClient.loop();
     const long long afterMqtt = millis() - before;
 
-    // OTA
-    before = millis();
-
-    if (afterMqtt < 10)
-        ElegantOTA.loop();
-
-    const long long afterOta = millis() - before;
-
-    // Server
-    before = millis();
-
-    if (afterMqtt < 10 && afterOta < 10)
-        m_server.handleClient();
-
-    const long long afterServer = millis() - before;
+    // // OTA
+    // before = millis();
+    //
+    // // if (afterMqtt < 10)
+    //     // ElegantOTA.loop();
+    //
+    // const long long afterOta = millis() - before;
+    //
+    // // Server
+    // before = millis();
+    //
+    // if (afterMqtt < 10 && afterOta < 10)
+    //     m_server.handleClient();
+    //
+    // const long long afterServer = millis() - before;
 
     // Reset countdown, 10 minutes
     if (m_rtc.getLocalEpoch() > 600)
@@ -98,18 +98,18 @@ void loop()
     // Don't do anything beyond here if we don't have debug flag on
     if (!m_debugSerialOn) return;
 
-    if (afterServer > 10 ||
-        afterOta > 10 ||
-        afterMqtt > 10)
-    {
-        Serial.println();
-        Serial.print("server: ");
-        Serial.print(afterServer);
-        Serial.print(" ota: ");
-        Serial.print(afterOta);
-        Serial.print(" mqtt: ");
-        Serial.println(afterMqtt);
-        Serial.println();
-    }
+    // if (afterServer > 10 ||
+    //     afterOta > 10 ||
+    //     afterMqtt > 10)
+    // {
+    //     Serial.println();
+    //     Serial.print("server: ");
+    //     Serial.print(afterServer);
+    //     Serial.print(" ota: ");
+    //     Serial.print(afterOta);
+    //     Serial.print(" mqtt: ");
+    //     Serial.println(afterMqtt);
+    //     Serial.println();
+    // }
 }
 
