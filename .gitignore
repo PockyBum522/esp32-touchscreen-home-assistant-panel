@@ -1,2 +1,4 @@
 .pio
 platformio-touchscreen-src/src/SECRETS/SECRETS.cpp
+/platformio-touchscreen-src/modified-high-perf-idf-release-5_1/hardware
+/platformio-touchscreen-src/modified-high-perf-idf-release-5_1/tools
