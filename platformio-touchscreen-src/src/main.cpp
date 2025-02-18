@@ -1,202 +1,115 @@
-/**
- * | Supported ESP SoCs | ESP32-S3 |
- * | ------------------ | -------- |
- *
- * | Supported LCD Controllers | ST7262 |
- * | ------------------------- | ------ |
- *
- * # Single RGB LCD Example
- *
- * The example demonstrates how to develop different model LCDs with RGB (without 3-wire SPI) interface using standalone drivers and test them by displaying color bars.
- *
- * ## How to use
- *
- * 1. [Configure drivers](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-drivers) if needed.
- * 2. Modify the macros in the example to match the parameters according to your hardware.
- * 3. Navigate to the `Tools` menu in the Arduino IDE to choose a ESP board and configure its parameters, please refter to [Configuring Supported Development Boards](https://github.com/esp-arduino-libs/ESP32_Display_Panel#configuring-supported-development-boards)
- * 4. Verify and upload the example to your ESP board.
- *
- * ## Serial Output
- *
- * ```
- * ...
- * RGB LCD example start
- * Create RGB LCD bus
- * Create LCD device
- * Draw color bar from top left to bottom right, the order is B - G - R
- * RGB LCD example end
- * RGB refresh rate: 0
- * RGB refresh rate: 0
- * RGB refresh rate: 31
- * RGB refresh rate: 31
- * ...
- * ```
- *
- * ## Troubleshooting
- *
- * Please check the [FAQ](https://github.com/esp-arduino-libs/ESP32_Display_Panel#faq) first to see if the same question exists. If not, please create a [Github issue](https://github.com/esp-arduino-libs/ESP32_Display_Panel/issues). We will get back to you as soon as possible.
- *
- */
-
 #include <Arduino.h>
+#include <WiFi.h>
+#include <PubSubClient.h>
+#include <ESP32Time.h>
+#include <ElegantOTA.h>
 #include <ESP_Panel_Library.h>
+#include <elapsedMillis.h>
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/**
- * Currently, the library supports the following RGB (without 3-wire SPI) LCDs:
- *      - ST7262
- */
-#define EXAMPLE_LCD_NAME                        ST7262
-#define EXAMPLE_LCD_WIDTH                       (800)
-#define EXAMPLE_LCD_HEIGHT                      (480)
-#define EXAMPLE_LCD_COLOR_BITS                  (16)
-#define EXAMPLE_LCD_RGB_DATA_WIDTH              (16)
-#define EXAMPLE_LCD_RGB_TIMING_FREQ_HZ          (16 * 1000 * 1000)
-#define EXAMPLE_LCD_RGB_TIMING_HPW              (40)
-#define EXAMPLE_LCD_RGB_TIMING_HBP              (40)
-#define EXAMPLE_LCD_RGB_TIMING_HFP              (48)
-#define EXAMPLE_LCD_RGB_TIMING_VPW              (23)
-#define EXAMPLE_LCD_RGB_TIMING_VBP              (32)
-#define EXAMPLE_LCD_RGB_TIMING_VFP              (13)
+#include "Logging/Logger.h"
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////// Please update the following configuration according to your board spec ////////////////////////////
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#define EXAMPLE_LCD_PIN_NUM_RGB_DISP            (-1)
-#define EXAMPLE_LCD_PIN_NUM_RGB_VSYNC           (3)
-#define EXAMPLE_LCD_PIN_NUM_RGB_HSYNC           (46)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DE              (5)
-#define EXAMPLE_LCD_PIN_NUM_RGB_PCLK            (7)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA0           (14)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA1           (38)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA2           (18)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA3           (17)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA4           (10)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA5           (39)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA6           (0)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA7           (45)
-#if EXAMPLE_LCD_RGB_DATA_WIDTH > 8
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA8           (45)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA9           (47)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA10          (21)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA11          (1)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA12          (2)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA13          (42)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA14          (41)
-#define EXAMPLE_LCD_PIN_NUM_RGB_DATA15          (40)
-#endif
-#define EXAMPLE_LCD_PIN_NUM_RST                 (-1)
-#define EXAMPLE_LCD_PIN_NUM_BK_LIGHT            (45)
-#define EXAMPLE_LCD_BK_LIGHT_ON_LEVEL           (1)
+bool m_debugSerialOn = false;
 
-#define EXAMPLE_LCD_BK_LIGHT_OFF_LEVEL !EXAMPLE_LCD_BK_LIGHT_ON_LEVEL
+String m_versionNumber = "v14";
+String m_applicationName = "Den Touchscreen";
 
-/* Enable or disable printing RGB refresh rate */
-#define EXAMPLE_ENABLE_PRINT_LCD_FPS            (1)
+elapsedSeconds m_sinceLastHeartbeatMessage;
 
-#define _EXAMPLE_LCD_CLASS(name, ...) ESP_PanelLcd_##name(__VA_ARGS__)
-#define EXAMPLE_LCD_CLASS(name, ...)  _EXAMPLE_LCD_CLASS(name, ##__VA_ARGS__)
+auto m_logger = *new Logger(Information, &m_debugSerialOn);
+WebServer m_server(80);
+WiFiClient m_espClient;
+PubSubClient m_mqttClient(m_espClient);
+ESP32Time m_rtc(0);
 
-#if EXAMPLE_ENABLE_PRINT_LCD_FPS
-#define EXAMPLE_LCD_FPS_COUNT_MAX               (100)
+auto panel = new ESP_Panel();
 
-DRAM_ATTR int frame_count = 0;
-DRAM_ATTR int fps = 0;
-DRAM_ATTR long start_time = 0;
-
-IRAM_ATTR bool onVsyncEndCallback(void *user_data)
-{
-    long frame_start_time = *(long *)user_data;
-    if (frame_start_time == 0) {
-        (*(long *)user_data) = millis();
-
-        return false;
-    }
-
-    frame_count++;
-    if (frame_count >= EXAMPLE_LCD_FPS_COUNT_MAX) {
-        fps = EXAMPLE_LCD_FPS_COUNT_MAX * 1000 / (millis() - frame_start_time);
-        frame_count = 0;
-        (*(long *)user_data) = millis();
-    }
-
-    return false;
-}
-#endif
+#include "SetupHelpers/TouchscreenHardwareInitializer.h"
+#include "SetupHelpers/LvglInitializer.h"
+#include "SetupHelpers/NetworkHandlers.h"
 
 void setup()
 {
     Serial.begin(115200);
-    Serial.println("RGB LCD example start");
 
-#if EXAMPLE_LCD_PIN_NUM_BK_LIGHT >= 0
-    Serial.println("Initialize backlight control pin and turn it off");
-    ESP_PanelBacklight *backlight = new ESP_PanelBacklight(EXAMPLE_LCD_PIN_NUM_BK_LIGHT, EXAMPLE_LCD_BK_LIGHT_ON_LEVEL, true);
-    backlight->begin();
-    backlight->off();
-#endif
+    Serial.print(m_applicationName + " start - ");
+    Serial.println(m_versionNumber);
 
-    Serial.println("Create RGB LCD bus");
-#if EXAMPLE_LCD_RGB_DATA_WIDTH == 8
-    ESP_PanelBus_RGB *panel_bus = new ESP_PanelBus_RGB(EXAMPLE_LCD_WIDTH, EXAMPLE_LCD_HEIGHT,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA0, EXAMPLE_LCD_PIN_NUM_RGB_DATA1,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA2, EXAMPLE_LCD_PIN_NUM_RGB_DATA3,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA4, EXAMPLE_LCD_PIN_NUM_RGB_DATA5,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA6, EXAMPLE_LCD_PIN_NUM_RGB_DATA7,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_HSYNC, EXAMPLE_LCD_PIN_NUM_RGB_VSYNC,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_PCLK, EXAMPLE_LCD_PIN_NUM_RGB_DE,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DISP);
-#elif EXAMPLE_LCD_RGB_DATA_WIDTH == 16
-    ESP_PanelBus_RGB *panel_bus = new ESP_PanelBus_RGB(EXAMPLE_LCD_WIDTH, EXAMPLE_LCD_HEIGHT,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA0, EXAMPLE_LCD_PIN_NUM_RGB_DATA1,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA2, EXAMPLE_LCD_PIN_NUM_RGB_DATA3,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA4, EXAMPLE_LCD_PIN_NUM_RGB_DATA5,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA6, EXAMPLE_LCD_PIN_NUM_RGB_DATA7,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA8, EXAMPLE_LCD_PIN_NUM_RGB_DATA9,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA10, EXAMPLE_LCD_PIN_NUM_RGB_DATA11,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA12, EXAMPLE_LCD_PIN_NUM_RGB_DATA13,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DATA14, EXAMPLE_LCD_PIN_NUM_RGB_DATA15,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_HSYNC, EXAMPLE_LCD_PIN_NUM_RGB_VSYNC,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_PCLK, EXAMPLE_LCD_PIN_NUM_RGB_DE,
-                                                       EXAMPLE_LCD_PIN_NUM_RGB_DISP);
-#endif
-    panel_bus->configRgbTimingFreqHz(EXAMPLE_LCD_RGB_TIMING_FREQ_HZ);
-    panel_bus->configRgbTimingPorch(EXAMPLE_LCD_RGB_TIMING_HPW, EXAMPLE_LCD_RGB_TIMING_HBP, EXAMPLE_LCD_RGB_TIMING_HFP,
-                                    EXAMPLE_LCD_RGB_TIMING_VPW, EXAMPLE_LCD_RGB_TIMING_VBP, EXAMPLE_LCD_RGB_TIMING_VFP);
-    // panel_bus->configRgbBounceBufferSize(EXAMPLE_LCD_WIDTH * 10); // Set bounce buffer to avoid screen drift
-    panel_bus->begin();
+    Serial.println("Initialize panel device");
 
-    Serial.println("Create LCD device");
-    ESP_PanelLcd *lcd = new EXAMPLE_LCD_CLASS(EXAMPLE_LCD_NAME, panel_bus, EXAMPLE_LCD_COLOR_BITS, EXAMPLE_LCD_PIN_NUM_RST);
-    lcd->init();
-    lcd->reset();
-    lcd->begin();
-#if EXAMPLE_LCD_PIN_NUM_RGB_DISP >= 0
-    lcd->displayOn();
-#endif
-#if EXAMPLE_ENABLE_PRINT_LCD_FPS
-    lcd->attachRefreshFinishCallback(onVsyncEndCallback, (void *)&start_time);
-#endif
+    TouchscreenHardwareInitializer::InitLcdTouchscreenHardware();
+    LvglInitializer::InitLvglToTouchscreen();
 
-    Serial.println("Draw color bar from top left to bottom right, the order is B - G - R");
-    lcd->colorBarTest(EXAMPLE_LCD_WIDTH, EXAMPLE_LCD_HEIGHT);
+    NetworkHandlers::ConnectWifi();
+    NetworkHandlers::SetupOtaServer();
+    NetworkHandlers::ConnectMqtt();
 
-#if EXAMPLE_LCD_PIN_NUM_BK_LIGHT >= 0
-    Serial.println("Turn on the backlight");
-    backlight->on();
-#endif
-
-    Serial.println("RGB LCD example end");
+    delay(1000);
+    Serial.println("Finished setup(), starting loop() - " + m_versionNumber);
 }
 
 void loop()
 {
-    delay(1000);
-#if EXAMPLE_ENABLE_PRINT_LCD_FPS
-    Serial.println("RGB refresh rate: " + String(fps));
-#else
-    Serial.println("IDLE loop");
-#endif
+    // All of these checks are just to make it so if something takes a long time, don't run the others until loop()
+    //      has finished. I don't know if LVGL runs things in between loop() but I figure it can't hurt.
+    //      ...I mean it can, but...
+
+    // MQTT
+    long long before = millis();
+    m_mqttClient.loop();
+    const long long afterMqtt = millis() - before;
+
+    // // OTA
+    // before = millis();
+    //
+    // // if (afterMqtt < 10)
+    //     // ElegantOTA.loop();
+    //
+    // const long long afterOta = millis() - before;
+    //
+    // // Server
+    // before = millis();
+    //
+    // if (afterMqtt < 10 && afterOta < 10)
+    //     m_server.handleClient();
+    //
+    // const long long afterServer = millis() - before;
+
+    // Reset countdown, 10 minutes
+    if (m_rtc.getLocalEpoch() > 600)
+    {
+        // reset local epoch counter
+        m_rtc.setTime(0);
+
+        m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, "10 minutes elapsed, about to restart");
+
+        ESP.restart();
+    }
+
+    // Send heartbeat message every 20 seconds
+    if (m_sinceLastHeartbeatMessage > 20)
+    {
+        m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, ("heartbeat_wd_" + m_versionNumber).c_str());
+
+        Serial.println(("heartbeat_wd_" + m_versionNumber).c_str());
+
+        m_sinceLastHeartbeatMessage = 0;
+    }
+
+    // Don't do anything beyond here if we don't have debug flag on
+    if (!m_debugSerialOn) return;
+
+    // if (afterServer > 10 ||
+    //     afterOta > 10 ||
+    //     afterMqtt > 10)
+    // {
+    //     Serial.println();
+    //     Serial.print("server: ");
+    //     Serial.print(afterServer);
+    //     Serial.print(" ota: ");
+    //     Serial.print(afterOta);
+    //     Serial.print(" mqtt: ");
+    //     Serial.println(afterMqtt);
+    //     Serial.println();
+    // }
 }
+
