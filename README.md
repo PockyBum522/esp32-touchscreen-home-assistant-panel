@@ -28,14 +28,14 @@ esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/modified-high-
 
 7. Modify your paths in platformio.ini to point to the correct path on your machine for:
 
-platform_packages =
+platform_packages =</br>
     platformio/framework-arduinoespressif32-libs @ symlink:///media/secondary/repos/esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/modified-high-perf-idf-release-5_1/tools/esp32-arduino-libs/idf-release_v5.1-bd2b9390ef
 
 and 
 
-lib_deps =
-    symlink:///media/secondary/repos/esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/lib/ESP32_Display_Panel
-    symlink:///media/secondary/repos/esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/lib/ESP32_IO_Expander
+lib_deps =</br>
+    symlink:///media/secondary/repos/esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/lib/ESP32_Display_Panel</br>
+    symlink:///media/secondary/repos/esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/lib/ESP32_IO_Expander</br>
     symlink:///media/secondary/repos/esp32-touchscreen-home-assistant-panel/platformio-touchscreen-src/lib/lvgl
     
 (Note that you'll need to retain symlink:// prefix in all cases. I used absolute paths but you may have luck with relative.)
