@@ -10,7 +10,7 @@
 
 bool m_debugSerialOn = false;
 
-String m_versionNumber = "v14";
+String m_versionNumber = "v15";
 String m_applicationName = "Den Touchscreen";
 
 elapsedSeconds m_sinceLastHeartbeatMessage;
@@ -41,7 +41,6 @@ void setup()
 
     NetworkHandlers::ConnectWifi();
     NetworkHandlers::SetupOtaServer();
-    NetworkHandlers::ConnectMqtt();
 
     delay(1000);
     Serial.println("Finished setup(), starting loop() - " + m_versionNumber);
@@ -52,6 +51,11 @@ void loop()
     // All of these checks are just to make it so if something takes a long time, don't run the others until loop()
     //      has finished. I don't know if LVGL runs things in between loop() but I figure it can't hurt.
     //      ...I mean it can, but...
+
+	if (!m_mqttClient.connected())
+	{
+		NetworkHandlers::ConnectMqtt();
+	}
 
     // MQTT
     long long before = millis();
@@ -75,15 +79,15 @@ void loop()
     // const long long afterServer = millis() - before;
 
     // Reset countdown, 10 minutes
-    if (m_rtc.getLocalEpoch() > 600)
-    {
-        // reset local epoch counter
-        m_rtc.setTime(0);
-
-        m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, "10 minutes elapsed, about to restart");
-
-        ESP.restart();
-    }
+    // if (m_rtc.getLocalEpoch() > 600)
+    // {
+    //     // reset local epoch counter
+    //     m_rtc.setTime(0);
+    //
+    //     m_mqttClient.publish(SECRETS::MqttTopicDeviceStatus, "10 minutes elapsed, about to restart");
+    //
+    //     ESP.restart();
+    // }
 
     // Send heartbeat message every 20 seconds
     if (m_sinceLastHeartbeatMessage > 20)
