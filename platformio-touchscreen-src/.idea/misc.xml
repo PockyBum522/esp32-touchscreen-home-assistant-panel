@@ -7,6 +7,9 @@
     <sourceRoots>
       <file path="$PROJECT_DIR$/lib/ESP32_Display_Panel/src" />
     </sourceRoots>
+    <libraryRoots>
+      <file path="$PROJECT_DIR$/lib" />
+    </libraryRoots>
   </component>
   <component name="ExternalStorageConfigurationManager" enabled="true" />
   <component name="PlatformIOSettings">
